@@ -52,7 +52,7 @@ export default function HomePage() {
         <div className="flex flex-col gap-8">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-muted/50 text-xs text-muted-foreground font-mono w-fit">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-            open beta · free forever
+            Created for developers by a developer
           </div>
 
           <div>
@@ -293,7 +293,7 @@ export default function HomePage() {
             <BookOpen size={12} />
             <span>Devtrack</span>
           </div>
-          <span>built with next.js · {new Date().getFullYear()}</span>
+          <span>Built with ❤️ by @Anubhav · {new Date().getFullYear()}</span>
         </div>
       </footer>
 
