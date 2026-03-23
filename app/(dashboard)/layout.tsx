@@ -6,6 +6,13 @@ import { signOut } from "@/auth"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { LayoutDashboard, BookOpen, Target, BarChart2, LogOut } from "lucide-react"
 
+const navItems = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/topics", label: "Topics", icon: BookOpen },
+  { href: "/goals", label: "Goals", icon: Target },
+  { href: "/analytics", label: "Analytics", icon: BarChart2 },
+]
+
 export default async function DashboardLayout({
   children,
 }: {
@@ -15,10 +22,10 @@ export default async function DashboardLayout({
   if (!session) redirect("/login")
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="min-h-screen bg-background">
 
-      {/* Sidebar */}
-      <aside className="w-60 border-r border-border flex flex-col bg-sidebar">
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex fixed top-0 left-0 h-full w-60 border-r border-border flex-col bg-sidebar z-40">
 
         {/* Logo + toggle */}
         <div className="px-5 py-5 border-b border-border flex items-center justify-between">
@@ -33,12 +40,7 @@ export default async function DashboardLayout({
 
         {/* Nav */}
         <nav className="flex-1 p-3 flex flex-col gap-0.5">
-          {[
-            { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-            { href: "/topics", label: "Topics", icon: BookOpen },
-            { href: "/goals", label: "Goals", icon: Target },
-            { href: "/analytics", label: "Analytics", icon: BarChart2 },
-          ].map((item) => (
+          {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -93,10 +95,67 @@ export default async function DashboardLayout({
 
       </aside>
 
-      {/* Content */}
-      <main className="flex-1 p-8 overflow-auto">
-        {children}
+      {/* Mobile top bar */}
+      <header className="md:hidden fixed top-0 left-0 right-0 z-40 border-b border-border bg-sidebar flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-2">
+          <BookOpen size={15} className="text-muted-foreground" />
+          <span className="font-mono font-semibold text-sm tracking-tight">
+            dev<span className="text-muted-foreground">track</span>
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          {session.user?.image ? (
+            <img
+              src={session.user.image}
+              alt="avatar"
+              className="w-7 h-7 rounded-full"
+            />
+          ) : (
+            <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-mono">
+              {session.user?.name?.[0]}
+            </div>
+          )}
+          <ThemeToggle />
+        </div>
+      </header>
+
+      {/* Main content */}
+      <main className="md:ml-60 pb-20 md:pb-0">
+        <div className="pt-16 md:pt-0 p-4 md:p-8">
+          {children}
+        </div>
       </main>
+
+      {/* Mobile bottom nav */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-sidebar">
+        <div className="flex items-center">
+          {navItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="flex-1 flex flex-col items-center gap-1 py-3 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <item.icon size={18} />
+              <span className="text-xs font-mono">{item.label}</span>
+            </Link>
+          ))}
+          <form
+            className="flex-1"
+            action={async () => {
+              "use server"
+              await signOut({ redirectTo: "/" })
+            }}
+          >
+            <button
+              type="submit"
+              className="w-full flex flex-col items-center gap-1 py-3 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <LogOut size={18} />
+              <span className="text-xs font-mono">sign out</span>
+            </button>
+          </form>
+        </div>
+      </nav>
 
     </div>
   )
