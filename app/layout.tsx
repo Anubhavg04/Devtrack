@@ -3,6 +3,7 @@ import { Inter, IBM_Plex_Mono } from "next/font/google"
 import "./globals.css"
 import { SessionProvider } from "next-auth/react"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Analytics } from "@vercel/analytics/next"
 
 const inter = Inter({
   variable: "--font-sans",
