@@ -35,6 +35,7 @@ export default function RootLayout({
         <ThemeProvider>
           <SessionProvider>
             {children}
+            <Analytics />
           </SessionProvider>
         </ThemeProvider>
       </body>
