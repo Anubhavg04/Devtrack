@@ -27,7 +27,7 @@ export default async function TopicsPage() {
 
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">Topics</h1>
+        <h1 className="text-2xl py-6 font-bold">Topics</h1>
         <p className="text-muted-foreground mt-1">
           Track everything you are learning
         </p>

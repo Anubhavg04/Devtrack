@@ -3,7 +3,8 @@ import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { Heatmap } from "@/components/heatmaps"
 import { subDays } from "date-fns"
-import { BookOpen, Target, CheckCircle2 } from "lucide-react"
+import { BookOpen, Target, CheckCircle2, ArrowRight } from "lucide-react"
+import Link from "next/link"
 
 export default async function DashboardPage() {
   const session = await auth()
@@ -22,31 +23,37 @@ export default async function DashboardPage() {
     },
   })
 
-  const topicsCount = await prisma.topic.count({
-    where: { userId: user.id },
-  })
-
-  const goalsCount = await prisma.goal.count({
-    where: { userId: user.id },
-  })
-
-  const completedGoals = await prisma.goal.count({
-    where: { userId: user.id, completed: true },
-  })
-
-  const sessions = await prisma.session.findMany({
-    where: {
-      userId: user.id,
-      date: { gte: subDays(new Date(), 364) },
-    },
-    select: { date: true, minutes: true },
-  })
+  const [topicsCount, goalsCount, completedGoals, sessions, recentTopics, activeGoals] =
+    await Promise.all([
+      prisma.topic.count({ where: { userId: user.id } }),
+      prisma.goal.count({ where: { userId: user.id } }),
+      prisma.goal.count({ where: { userId: user.id, completed: true } }),
+      prisma.session.findMany({
+        where: {
+          userId: user.id,
+          date: { gte: subDays(new Date(), 364) },
+        },
+        select: { date: true, minutes: true },
+      }),
+      prisma.topic.findMany({
+        where: { userId: user.id },
+        include: { sessions: true },
+        orderBy: { createdAt: "desc" },
+        take: 3,
+      }),
+      prisma.goal.findMany({
+        where: { userId: user.id, completed: false },
+        orderBy: { createdAt: "desc" },
+        take: 3,
+      }),
+    ])
 
   return (
     <div className="flex flex-col gap-8 max-w-5xl">
 
+      {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
+        <h1 className="text-2xl py-6 font-semibold tracking-tight">
           Welcome back, {session.user.name?.split(" ")[0]} 👋
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
@@ -54,12 +61,92 @@ export default async function DashboardPage() {
         </p>
       </div>
 
+      {/* Stat cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard icon={BookOpen} label="Topics tracking" value={topicsCount} color="blue" />
         <StatCard icon={Target} label="Total goals" value={goalsCount} color="purple" />
         <StatCard icon={CheckCircle2} label="Goals completed" value={completedGoals} color="green" />
       </div>
 
+      {/* Recent topics + active goals side by side */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        {/* Recent topics */}
+        <div className="border border-border rounded-xl p-5 bg-card flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-medium text-sm">Recent topics</h2>
+            <Link
+              href="/topics"
+              className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+            >
+              View all <ArrowRight size={12} />
+            </Link>
+          </div>
+          {recentTopics.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No topics yet.</p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {recentTopics.map((topic) => {
+                const totalMinutes = topic.sessions.reduce(
+                  (sum, s) => sum + s.minutes, 0
+                )
+                const hours = Math.floor(totalMinutes / 60)
+                const mins = totalMinutes % 60
+                const timeLabel = hours > 0
+                  ? `${hours}h ${mins}m`
+                  : `${mins}m`
+                return (
+                  <div
+                    key={topic.id}
+                    className="flex items-center justify-between py-2 border-b border-border last:border-0"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                      <span className="text-sm font-medium">{topic.title}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground font-mono">
+                      {totalMinutes === 0 ? "no sessions" : timeLabel}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Active goals */}
+        <div className="border border-border rounded-xl p-5 bg-card flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-medium text-sm">Active goals</h2>
+            <Link
+              href="/goals"
+              className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+            >
+              View all <ArrowRight size={12} />
+            </Link>
+          </div>
+          {activeGoals.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              {goalsCount === 0 ? "No goals yet." : "All goals completed! 🎉"}
+            </p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {activeGoals.map((goal) => (
+                <div
+                  key={goal.id}
+                  className="flex items-center gap-3 py-2 border-b border-border last:border-0"
+                >
+                  <div className="w-4 h-4 rounded border-2 border-border flex-shrink-0" />
+                  <span className="text-sm">{goal.title}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+      </div>
+
+      {/* Heatmap */}
       <div className="border border-border rounded-xl p-6 bg-card">
         <div className="mb-5">
           <h2 className="font-semibold tracking-tight">Learning activity</h2>
@@ -86,34 +173,18 @@ function StatCard({
   color: "blue" | "purple" | "green"
 }) {
   const colors = {
-    blue: {
-      bg: "bg-blue-500/10",
-      icon: "text-blue-500",
-      border: "border-blue-500/20",
-    },
-    purple: {
-      bg: "bg-purple-500/10",
-      icon: "text-purple-500",
-      border: "border-purple-500/20",
-    },
-    green: {
-      bg: "bg-green-500/10",
-      icon: "text-green-500",
-      border: "border-green-500/20",
-    },
+    blue: { bg: "bg-blue-500/10", icon: "text-blue-500", border: "border-blue-500/20" },
+    purple: { bg: "bg-purple-500/10", icon: "text-purple-500", border: "border-purple-500/20" },
+    green: { bg: "bg-green-500/10", icon: "text-green-500", border: "border-green-500/20" },
   }
-
   const c = colors[color]
-
   return (
     <div className="border border-border rounded-xl p-5 bg-card flex flex-col gap-4 hover:bg-accent/30 transition-colors">
       <div className={`w-9 h-9 rounded-lg ${c.bg} border ${c.border} flex items-center justify-center`}>
         <Icon size={16} className={c.icon} />
       </div>
       <div>
-        <div className="text-3xl font-semibold tracking-tight font-mono">
-          {value}
-        </div>
+        <div className="text-3xl font-semibold tracking-tight font-mono">{value}</div>
         <div className="text-sm text-muted-foreground mt-0.5">{label}</div>
       </div>
     </div>

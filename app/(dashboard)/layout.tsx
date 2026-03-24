@@ -1,16 +1,16 @@
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { signOut } from "@/auth"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { LayoutDashboard, BookOpen, Target, BarChart2, LogOut } from "lucide-react"
+import { BookOpen, LogOut } from "lucide-react"
+import { ActiveLink, MobileNavLink } from "@/components/active-link"
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/topics", label: "Topics", icon: BookOpen },
-  { href: "/goals", label: "Goals", icon: Target },
-  { href: "/analytics", label: "Analytics", icon: BarChart2 },
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/topics", label: "Topics" },
+  { href: "/goals", label: "Goals" },
+  { href: "/analytics", label: "Analytics" },
 ]
 
 export default async function DashboardLayout({
@@ -27,7 +27,6 @@ export default async function DashboardLayout({
       {/* Desktop sidebar */}
       <aside className="hidden md:flex fixed top-0 left-0 h-full w-60 border-r border-border flex-col bg-sidebar z-40">
 
-        {/* Logo + toggle */}
         <div className="px-5 py-5 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
             <BookOpen size={15} className="text-muted-foreground" />
@@ -38,21 +37,16 @@ export default async function DashboardLayout({
           <ThemeToggle />
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 p-3 flex flex-col gap-0.5">
           {navItems.map((item) => (
-            <Link
+            <ActiveLink
               key={item.href}
               href={item.href}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors"
-            >
-              <item.icon size={15} />
-              {item.label}
-            </Link>
+              label={item.label}
+            />
           ))}
         </nav>
 
-        {/* User */}
         <div className="p-3 border-t border-border">
           <div className="flex items-center gap-3 px-3 py-2 mb-1">
             {session.user?.image ? (
@@ -75,12 +69,10 @@ export default async function DashboardLayout({
               </span>
             </div>
           </div>
-          <form
-            action={async () => {
-              "use server"
-              await signOut({ redirectTo: "/" })
-            }}
-          >
+          <form action={async () => {
+            "use server"
+            await signOut({ redirectTo: "/" })
+          }}>
             <Button
               variant="ghost"
               size="sm"
@@ -130,14 +122,11 @@ export default async function DashboardLayout({
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-sidebar">
         <div className="flex items-center">
           {navItems.map((item) => (
-            <Link
+            <MobileNavLink
               key={item.href}
               href={item.href}
-              className="flex-1 flex flex-col items-center gap-1 py-3 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <item.icon size={18} />
-              <span className="text-xs font-mono">{item.label}</span>
-            </Link>
+              label={item.label}
+            />
           ))}
           <form
             className="flex-1"
@@ -151,7 +140,7 @@ export default async function DashboardLayout({
               className="w-full flex flex-col items-center gap-1 py-3 text-muted-foreground hover:text-foreground transition-colors"
             >
               <LogOut size={18} />
-              <span className="text-xs font-mono">sign out</span>
+              <span className="text-xs font-mono">out</span>
             </button>
           </form>
         </div>

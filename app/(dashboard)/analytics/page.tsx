@@ -81,10 +81,10 @@ export default async function AnalyticsPage() {
 
       {/* Header */}
       <div className="border-b border-border pb-4">
-        <div className="text-xs text-muted-foreground uppercase tracking-widest mb-1">
-          analytics
+        <div className="text-xs text-muted-foreground py-6 uppercase tracking-widest mb-1">
+          <h3 className="text-xl font-semibold tracking-tight">Analytics</h3>
         </div>
-        <h1 className="text-xl font-semibold tracking-tight">
+        <h1 className="text-xl py-1 font-semibold tracking-tight">
           $ learning --report --user={session.user.name?.split(" ")[0].toLowerCase()}
         </h1>
       </div>
