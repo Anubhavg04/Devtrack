@@ -8,7 +8,7 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(cuid())
+  id        String    @id @default(uuid())
   email     String    @unique
   name      String?
   image     String?
@@ -20,7 +20,7 @@ model User {
 }
 
 model Session {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   minutes   Int
   note      String?
   date      DateTime @default(now())
@@ -33,7 +33,7 @@ model Session {
 }
 
 model Topic {
-  id          String    @id @default(cuid())
+  id          String    @id @default(uuid())
   title       String
   description String?
   status      String    @default("active")
@@ -45,7 +45,7 @@ model Topic {
 }
 
 model Goal {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   title     String
   completed Boolean  @default(false)
   createdAt DateTime @default(now())
