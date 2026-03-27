@@ -131,7 +131,7 @@ export function Heatmap({ sessions }: Props) {
 
         {/* Month labels */}
         <div className="overflow-x-auto">
-          <div className="flex gap-1 min-w-max pl-0">
+          <div className="flex gap-2 min-w-max pl-0">
             {months.map((m, i) => (
               <div
                 key={i}

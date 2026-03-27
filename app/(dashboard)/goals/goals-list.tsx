@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import confetti from "canvas-confetti"
 import { toggleGoal, deleteGoal } from "./actions"
 import { Button } from "@/components/ui/button"
@@ -16,19 +16,48 @@ type Props = {
   goals: Goal[]
 }
 
-export function GoalsList({ goals }: Props) {
-  const [pendingId, setPendingId] = useState<string | null>(null)
+export function GoalsList({ goals: initialGoals }: Props) {
+  const [goals, setGoals] = useState<Goal[]>(initialGoals)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
 
-  const handleToggle = async (goalId: string, completed: boolean) => {
-    setPendingId(goalId)
+  const handleToggle = (goalId: string, currentCompleted: boolean) => {
+    const newCompleted = !currentCompleted
 
-    // If completing a goal, fire confetti first
-    if (!completed) {
-      fireConfetti()
-    }
+    setGoals((prev) =>
+      prev.map((g) => (g.id === goalId ? { ...g, completed: newCompleted } : g))
+    )
 
-    await toggleGoal(goalId, !completed)
-    setPendingId(null)
+    // Fire confetti instantly if completing
+    if (newCompleted) fireConfetti()
+
+    // Sync with server in background
+    startTransition(async () => {
+      try {
+        await toggleGoal(goalId, newCompleted)
+      } catch {
+        setGoals((prev) =>
+          prev.map((g) =>
+            g.id === goalId ? { ...g, completed: currentCompleted } : g
+          )
+        )
+      }
+    })
+  }
+
+  const handleDelete = (goalId: string) => {
+    setDeletingId(goalId)
+    setGoals((prev) => prev.filter((g) => g.id !== goalId))
+
+    startTransition(async () => {
+      try {
+        await deleteGoal(goalId)
+      } catch {
+        setGoals(initialGoals)
+      } finally {
+        setDeletingId(null)
+      }
+    })
   }
 
   return (
@@ -43,7 +72,7 @@ export function GoalsList({ goals }: Props) {
           {/* Checkbox */}
           <button
             onClick={() => handleToggle(goal.id, goal.completed)}
-            disabled={pendingId === goal.id}
+            disabled={isPending}
             className={`
               w-5 h-5 rounded border-2 flex items-center justify-center
               transition-all duration-200 flex-shrink-0
@@ -51,7 +80,7 @@ export function GoalsList({ goals }: Props) {
                 ? "bg-green-500 border-green-500 text-white scale-110"
                 : "border-border hover:border-green-500"
               }
-              ${pendingId === goal.id ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+              ${isPending ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
             `}
           >
             {goal.completed && (
@@ -79,16 +108,16 @@ export function GoalsList({ goals }: Props) {
           </span>
 
           {/* Delete */}
-          <form action={deleteGoal.bind(null, goal.id)}>
-            <Button
-              type="submit"
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground hover:text-destructive h-8 w-8 p-0"
-            >
-              <Trash2 size={14} />
-            </Button>
-          </form>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={deletingId === goal.id || isPending}
+            onClick={() => handleDelete(goal.id)}
+            className="text-muted-foreground hover:text-destructive h-8 w-8 p-0"
+          >
+            <Trash2 size={14} />
+          </Button>
         </div>
       ))}
     </div>
@@ -96,7 +125,6 @@ export function GoalsList({ goals }: Props) {
 }
 
 function fireConfetti() {
-  // First burst from left
   confetti({
     particleCount: 60,
     spread: 55,
@@ -105,7 +133,6 @@ function fireConfetti() {
     ticks: 200,
   })
 
-  // Second burst from right
   setTimeout(() => {
     confetti({
       particleCount: 60,
@@ -116,7 +143,6 @@ function fireConfetti() {
     })
   }, 100)
 
-  // Final center burst
   setTimeout(() => {
     confetti({
       particleCount: 30,

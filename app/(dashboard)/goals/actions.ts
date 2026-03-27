@@ -9,16 +9,18 @@ async function getUser() {
   const session = await auth()
   if (!session?.user?.email) redirect("/login")
 
-  const user = await prisma.user.upsert({
+  const user = await prisma.user.findUnique({
     where: { email: session.user.email },
-    update: {},
-    create: {
-      email: session.user.email,
-      name: session.user.name,
-      image: session.user.image,
-    },
+    select: { id: true },
   })
+
+  if (!user) redirect("/login")
   return user
+}
+
+function invalidateAll() {
+  revalidatePath("/goals")
+  revalidatePath("/dashboard")
 }
 
 export async function addGoal(formData: FormData) {
@@ -30,7 +32,7 @@ export async function addGoal(formData: FormData) {
     data: { title: title.trim(), userId: user.id },
   })
 
-  revalidatePath("/goals")
+  invalidateAll()
 }
 
 export async function toggleGoal(goalId: string, completed: boolean) {
@@ -41,7 +43,7 @@ export async function toggleGoal(goalId: string, completed: boolean) {
     data: { completed },
   })
 
-  revalidatePath("/goals")
+  invalidateAll()
 }
 
 export async function deleteGoal(goalId: string) {
@@ -51,5 +53,5 @@ export async function deleteGoal(goalId: string) {
     where: { id: goalId, userId: user.id },
   })
 
-  revalidatePath("/goals")
+  invalidateAll()
 }

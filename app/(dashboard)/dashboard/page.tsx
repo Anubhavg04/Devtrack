@@ -1,52 +1,85 @@
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
+import { unstable_cache } from "next/cache"
 import { Heatmap } from "@/components/heatmaps"
 import { subDays } from "date-fns"
 import { BookOpen, Target, CheckCircle2, ArrowRight } from "lucide-react"
 import Link from "next/link"
 
+//Cached dashboard data — invalidated when topics or goals change
+const getDashboardData = (userId: string) =>
+  unstable_cache(
+    async () => {
+      const [
+        topicsCount,
+        goalsCount,
+        completedGoals,
+        sessions,
+        recentTopics,
+        activeGoals,
+      ] = await Promise.all([
+        prisma.topic.count({ where: { userId } }),
+        prisma.goal.count({ where: { userId } }),
+        prisma.goal.count({ where: { userId, completed: true } }),
+        prisma.session.findMany({
+          where: {
+            userId,
+            date: { gte: subDays(new Date(), 364) },
+          },
+          select: { date: true, minutes: true }, //  lean select
+        }),
+        prisma.topic.findMany({
+          where: { userId },
+          orderBy: { createdAt: "desc" },
+          take: 3,
+          select: {
+            id: true,
+            title: true,
+            sessions: {
+              select: { minutes: true }, // only minutes, not full session rows
+            },
+          },
+        }),
+        prisma.goal.findMany({
+          where: { userId, completed: false },
+          orderBy: { createdAt: "desc" },
+          take: 3,
+          select: { id: true, title: true }, // lean select
+        }),
+      ])
+
+      return {
+        topicsCount,
+        goalsCount,
+        completedGoals,
+        sessions,
+        recentTopics,
+        activeGoals,
+      }
+    },
+    [`dashboard-${userId}`],
+    { tags: [`dashboard-${userId}`, `topics-${userId}`, `goals-${userId}`] }
+  )()
+
 export default async function DashboardPage() {
   const session = await auth()
   if (!session?.user?.email) redirect("/login")
 
-  const user = await prisma.user.upsert({
+  const user = await prisma.user.findUnique({
     where: { email: session.user.email },
-    update: {
-      name: session.user.name,
-      image: session.user.image,
-    },
-    create: {
-      email: session.user.email,
-      name: session.user.name,
-      image: session.user.image,
-    },
+    select: { id: true },
   })
+  if (!user) redirect("/login")
 
-  const [topicsCount, goalsCount, completedGoals, sessions, recentTopics, activeGoals] =
-    await Promise.all([
-      prisma.topic.count({ where: { userId: user.id } }),
-      prisma.goal.count({ where: { userId: user.id } }),
-      prisma.goal.count({ where: { userId: user.id, completed: true } }),
-      prisma.session.findMany({
-        where: {
-          userId: user.id,
-          date: { gte: subDays(new Date(), 364) },
-        },
-        select: { date: true, minutes: true },
-      }),
-      prisma.topic.findMany({
-        where: { userId: user.id },
-        include: { sessions: true },
-        orderBy: { createdAt: "desc" },
-        take: 3,
-      }),
-      prisma.goal.findMany({
-        where: { userId: user.id, completed: false },
-        orderBy: { createdAt: "desc" },
-        take: 3,
-      }),
-    ])
+  const {
+    topicsCount,
+    goalsCount,
+    completedGoals,
+    sessions,
+    recentTopics,
+    activeGoals,
+  } = await getDashboardData(user.id)
 
   return (
     <div className="flex flex-col gap-8 max-w-5xl">
@@ -92,9 +125,7 @@ export default async function DashboardPage() {
                 )
                 const hours = Math.floor(totalMinutes / 60)
                 const mins = totalMinutes % 60
-                const timeLabel = hours > 0
-                  ? `${hours}h ${mins}m`
-                  : `${mins}m`
+                const timeLabel = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`
                 return (
                   <div
                     key={topic.id}
