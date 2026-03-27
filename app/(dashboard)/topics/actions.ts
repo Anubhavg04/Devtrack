@@ -5,21 +5,23 @@ import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
-// Get or create user helper - we'll reuse this everywhere
 async function getUser() {
   const session = await auth()
   if (!session?.user?.email) redirect("/login")
 
-  const user = await prisma.user.upsert({
+  const user = await prisma.user.findUnique({
     where: { email: session.user.email },
-    update: {},
-    create: {
-      email: session.user.email,
-      name: session.user.name,
-      image: session.user.image,
-    },
+    select: { id: true },
   })
+
+  if (!user) redirect("/login")
   return user
+}
+
+function invalidateAll() {
+  revalidatePath("/topics")
+  revalidatePath("/dashboard")
+  revalidatePath("/analytics")
 }
 
 export async function addTopic(formData: FormData) {
@@ -38,7 +40,7 @@ export async function addTopic(formData: FormData) {
     },
   })
 
-  revalidatePath("/topics")
+  invalidateAll()
 }
 
 export async function deleteTopic(topicId: string) {
@@ -48,7 +50,7 @@ export async function deleteTopic(topicId: string) {
     where: { id: topicId, userId: user.id },
   })
 
-  revalidatePath("/topics")
+  invalidateAll()
 }
 
 export async function logSession(formData: FormData) {
@@ -69,5 +71,5 @@ export async function logSession(formData: FormData) {
     },
   })
 
-  revalidatePath("/topics")
+  invalidateAll()
 }

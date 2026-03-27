@@ -1,8 +1,36 @@
-export const dynamic = "force-dynamic";
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
+import { unstable_cache } from "next/cache"
 import { subDays, format, startOfWeek, endOfWeek } from "date-fns"
+
+const getAnalyticsData = (userId: string) =>
+  unstable_cache(
+    async () => {
+      const [topics, sessions] = await Promise.all([
+        prisma.topic.findMany({
+          where: { userId },
+          select: {
+            title: true,
+            sessions: {
+              select: { minutes: true }, // only minutes needed
+            },
+          },
+        }),
+        prisma.session.findMany({
+          where: {
+            userId,
+            date: { gte: subDays(new Date(), 364) },
+          },
+          select: { date: true, minutes: true }, // lean select
+          orderBy: { date: "asc" },
+        }),
+      ])
+      return { topics, sessions }
+    },
+    [`analytics-${userId}`],
+    { tags: [`analytics-${userId}`, `topics-${userId}`] }
+  )()
 
 export default async function AnalyticsPage() {
   const session = await auth()
@@ -10,21 +38,14 @@ export default async function AnalyticsPage() {
 
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
-    include: {
-      topics: {
-        include: { sessions: true },
-      },
-      sessions: {
-        where: { date: { gte: subDays(new Date(), 364) } },
-        orderBy: { date: "asc" },
-      },
-    },
+    select: { id: true },
   })
-
   if (!user) redirect("/login")
 
-  // Total minutes per topic
-  const topicStats = user.topics
+  const { topics, sessions } = await getAnalyticsData(user.id)
+
+  // All computation stays in JS exactly as before — only the DB query changed
+  const topicStats = topics
     .map((topic) => ({
       title: topic.title,
       minutes: topic.sessions.reduce((sum, s) => sum + s.minutes, 0),
@@ -34,17 +55,16 @@ export default async function AnalyticsPage() {
 
   const totalMinutes = topicStats.reduce((sum, t) => sum + t.minutes, 0)
 
-  // This week vs last week
   const now = new Date()
   const thisWeekStart = startOfWeek(now)
   const lastWeekStart = startOfWeek(subDays(now, 7))
   const lastWeekEnd = endOfWeek(subDays(now, 7))
 
-  const thisWeekMinutes = user.sessions
+  const thisWeekMinutes = sessions
     .filter((s) => new Date(s.date) >= thisWeekStart)
     .reduce((sum, s) => sum + s.minutes, 0)
 
-  const lastWeekMinutes = user.sessions
+  const lastWeekMinutes = sessions
     .filter((s) => {
       const d = new Date(s.date)
       return d >= lastWeekStart && d <= lastWeekEnd
@@ -56,19 +76,17 @@ export default async function AnalyticsPage() {
     ? 100
     : Math.round((weekDiff / lastWeekMinutes) * 100)
 
-  // Most active day of week
   const dayCount: Record<string, number> = {}
-  user.sessions.forEach((s) => {
+  sessions.forEach((s) => {
     const day = format(new Date(s.date), "EEEE")
     dayCount[day] = (dayCount[day] || 0) + s.minutes
   })
   const mostActiveDay = Object.entries(dayCount).sort((a, b) => b[1] - a[1])[0]
 
-  // Last 7 days activity
   const last7 = Array.from({ length: 7 }).map((_, i) => {
     const date = subDays(now, 6 - i)
     const key = format(date, "yyyy-MM-dd")
-    const minutes = user.sessions
+    const minutes = sessions
       .filter((s) => format(new Date(s.date), "yyyy-MM-dd") === key)
       .reduce((sum, s) => sum + s.minutes, 0)
     return { date: format(date, "EEE"), minutes }
@@ -119,9 +137,7 @@ export default async function AnalyticsPage() {
               <div className="text-xs text-muted-foreground">{stat.key}</div>
               <div className={`text-2xl font-bold tracking-tight ${
                 stat.key === "vs_last_week"
-                  ? weekDiff >= 0
-                    ? "text-green-500"
-                    : "text-red-400"
+                  ? weekDiff >= 0 ? "text-green-500" : "text-red-400"
                   : ""
               }`}>
                 {stat.value}
@@ -131,7 +147,7 @@ export default async function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Last 7 days bar chart — terminal style */}
+      {/* Last 7 days bar chart */}
       <div className="border border-border rounded-xl p-5 bg-card">
         <div className="text-xs text-muted-foreground mb-4 uppercase tracking-widest">
           // last_7_days
@@ -168,9 +184,7 @@ export default async function AnalyticsPage() {
           // topics.breakdown
         </div>
         {topicStats.length === 0 ? (
-          <div className="text-sm text-muted-foreground">
-            no topics logged yet
-          </div>
+          <div className="text-sm text-muted-foreground">no topics logged yet</div>
         ) : (
           <div className="flex flex-col gap-4">
             {topicStats.map((topic, i) => {
@@ -182,7 +196,7 @@ export default async function AnalyticsPage() {
               const timeLabel = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`
 
               return (
-                <div key={topic.title} className="flex flex-col gap-1.5">
+                <div key={`${topic.title}-${i}`} className="flex flex-col gap-1.5">
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground text-xs">

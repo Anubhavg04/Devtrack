@@ -1,9 +1,27 @@
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
+import { unstable_cache } from "next/cache"
 import { addGoal } from "./actions"
-import { Button } from "@/components/ui/button"
 import { GoalsList } from "./goals-list"
+import { SubmitButton } from "@/components/submitbutton"
+
+const getGoals = (userId: string) =>
+  unstable_cache(
+    async () => {
+      return await prisma.goal.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          title: true,
+          completed: true,
+        },
+      })
+    },
+    [`goals-${userId}`],
+    { tags: [`goals-${userId}`] }
+  )()
 
 export default async function GoalsPage() {
   const session = await auth()
@@ -11,17 +29,14 @@ export default async function GoalsPage() {
 
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
-    include: {
-      goals: {
-        orderBy: { createdAt: "desc" },
-      },
-    },
+    select: { id: true },
   })
-
   if (!user) redirect("/login")
 
-  const completed = user.goals.filter((g) => g.completed).length
-  const total = user.goals.length
+  const goals = await getGoals(user.id)
+
+  const completed = goals.filter((g) => g.completed).length
+  const total = goals.length
 
   return (
     <div className="flex flex-col gap-8">
@@ -46,12 +61,12 @@ export default async function GoalsPage() {
             required
             className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
-          <Button type="submit" size="sm">Add goal</Button>
+          <SubmitButton label="Add goal" loadingLabel="Adding..." size="sm" />
         </form>
       </div>
 
       {/* Goals list */}
-      {user.goals.length === 0 ? (
+      {goals.length === 0 ? (
         <div className="border border-dashed border-border rounded-xl p-12 flex flex-col items-center gap-3 text-center">
           <span className="text-4xl">🎯</span>
           <h3 className="font-semibold">No goals yet</h3>
@@ -60,7 +75,7 @@ export default async function GoalsPage() {
           </p>
         </div>
       ) : (
-        <GoalsList goals={user.goals} />
+        <GoalsList goals={goals} />
       )}
 
     </div>
