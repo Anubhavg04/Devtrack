@@ -1,7 +1,8 @@
-import { auth } from "@/auth"
+// import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
-import { redirect } from "next/navigation"
+// import { redirect } from "next/navigation"
 import { unstable_cache } from "next/cache"
+import { getUserId } from "@/lib/getUser"
 import { subDays, format, startOfWeek, endOfWeek } from "date-fns"
 
 const getAnalyticsData = (userId: string) =>
@@ -12,46 +13,46 @@ const getAnalyticsData = (userId: string) =>
           where: { userId },
           select: {
             title: true,
+            _count: {
+              select: { sessions: true },
+            },
             sessions: {
               select: { minutes: true }, // only minutes needed
             },
           },
         }),
-        prisma.session.findMany({
+        prisma.session.groupBy({
+          by: ["date"],
           where: {
             userId,
             date: { gte: subDays(new Date(), 364) },
           },
-          select: { date: true, minutes: true }, // lean select
+          _sum: { 
+            minutes: true 
+          },
           orderBy: { date: "asc" },
         }),
       ])
       return { topics, sessions }
     },
     [`analytics-${userId}`],
-    { tags: [`analytics-${userId}`, `topics-${userId}`] }
+    { tags: [`analytics-${userId}`, `topics-${userId}`], revalidate: 60 }
   )()
 
 export default async function AnalyticsPage() {
-  const session = await auth()
-  if (!session?.user?.email) redirect("/login")
-
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { id: true },
-  })
-  if (!user) redirect("/login")
-
-  const { topics, sessions } = await getAnalyticsData(user.id)
+  const userId = await getUserId()
+  const { topics, sessions } = await getAnalyticsData(userId)
 
   // All computation stays in JS exactly as before — only the DB query changed
-  const topicStats = topics
-    .map((topic) => ({
+  const topicStats = topics.map((topic) => {
+    const totalMinutes = topic.sessions.reduce((sum, s) => sum + s.minutes, 0)
+  
+    return {
       title: topic.title,
-      minutes: topic.sessions.reduce((sum, s) => sum + s.minutes, 0),
-      sessions: topic.sessions.length,
-    }))
-    .sort((a, b) => b.minutes - a.minutes)
+      minutes: totalMinutes,
+      sessions: topic._count.sessions,
+    }
+  })
 
   const totalMinutes = topicStats.reduce((sum, t) => sum + t.minutes, 0)
 
@@ -62,14 +63,14 @@ export default async function AnalyticsPage() {
 
   const thisWeekMinutes = sessions
     .filter((s) => new Date(s.date) >= thisWeekStart)
-    .reduce((sum, s) => sum + s.minutes, 0)
+    .reduce((sum, s) => sum + (s._sum.minutes || 0), 0)
 
   const lastWeekMinutes = sessions
     .filter((s) => {
       const d = new Date(s.date)
       return d >= lastWeekStart && d <= lastWeekEnd
     })
-    .reduce((sum, s) => sum + s.minutes, 0)
+    .reduce((sum, s) => sum + (s._sum.minutes || 0), 0)
 
   const weekDiff = thisWeekMinutes - lastWeekMinutes
   const weekDiffPercent = lastWeekMinutes === 0
@@ -79,7 +80,7 @@ export default async function AnalyticsPage() {
   const dayCount: Record<string, number> = {}
   sessions.forEach((s) => {
     const day = format(new Date(s.date), "EEEE")
-    dayCount[day] = (dayCount[day] || 0) + s.minutes
+    dayCount[day] = (dayCount[day] || 0) + (s._sum.minutes || 0)
   })
   const mostActiveDay = Object.entries(dayCount).sort((a, b) => b[1] - a[1])[0]
 
@@ -88,7 +89,7 @@ export default async function AnalyticsPage() {
     const key = format(date, "yyyy-MM-dd")
     const minutes = sessions
       .filter((s) => format(new Date(s.date), "yyyy-MM-dd") === key)
-      .reduce((sum, s) => sum + s.minutes, 0)
+      .reduce((sum, s) => sum + (s._sum.minutes || 0), 0)
     return { date: format(date, "EEE"), minutes }
   })
 
@@ -103,7 +104,7 @@ export default async function AnalyticsPage() {
           <h3 className="text-xl font-semibold tracking-tight">Analytics</h3>
         </div>
         <h1 className="text-xl py-1 font-semibold tracking-tight">
-          $ learning --report --user={session.user.name?.split(" ")[0].toLowerCase()}
+          $ learning --report --user={userId}
         </h1>
       </div>
 

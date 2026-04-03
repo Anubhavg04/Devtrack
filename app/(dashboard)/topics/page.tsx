@@ -1,7 +1,8 @@
-import { auth } from "@/auth"
+// import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
-import { redirect } from "next/navigation"
+// import { redirect } from "next/navigation"
 import { unstable_cache } from "next/cache"
+import { getUserId } from "@/lib/getUser"
 import { addTopic, deleteTopic, logSession } from "./actions"
 import { SubmitButton } from "@/components/submitbutton"
 
@@ -27,21 +28,12 @@ const getTopicsWithStats = (userId: string) =>
       })
     },
     [`topics-${userId}`],
-    { tags: [`topics-${userId}`] } // matches revalidateTag in actions.ts
+    { tags: [`topics-${userId}`], revalidate: 60 } // matches revalidateTag in actions.ts
   )()
 
 export default async function TopicsPage() {
-  const session = await auth()
-  if (!session?.user?.email) redirect("/login")
-
-  // ✅ Only fetch user id — nothing else needed here
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { id: true },
-  })
-  if (!user) redirect("/login")
-
-  const topics = await getTopicsWithStats(user.id)
+  const userId = await getUserId()
+  const topics = await getTopicsWithStats(userId)
 
   return (
     <div className="flex flex-col gap-8">
@@ -69,7 +61,6 @@ export default async function TopicsPage() {
             placeholder="Description (optional)"
             className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
-          {/* ✅ FIX 4: Shows loading state while action is pending */}
           <SubmitButton
             label="Add topic"
             loadingLabel="Adding..."

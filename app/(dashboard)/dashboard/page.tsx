@@ -223,60 +223,94 @@
 // }
 
 
-import { auth } from "@/auth"
+// import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
-import { redirect } from "next/navigation"
+import { unstable_cache } from "next/cache" 
+import { getUserId } from "@/lib/getUser"
+// import { redirect } from "next/navigation"
 import { Heatmap } from "@/components/heatmaps"
 import { subDays } from "date-fns"
 import { BookOpen, Target, CheckCircle2, ArrowRight } from "lucide-react"
 import Link from "next/link"
 
-async function getDashboardData(userId: string) {
-  const [
-    topicsCount,
-    goalsCount,
-    completedGoals,
-    sessions,
-    recentTopics,
-    activeGoals,
-  ] = await Promise.all([
-    prisma.topic.count({ where: { userId } }),
-    prisma.goal.count({ where: { userId } }),
-    prisma.goal.count({ where: { userId, completed: true } }),
-    prisma.session.findMany({
-      where: { userId, date: { gte: subDays(new Date(), 364) } },
-      select: { date: true, minutes: true },
-    }),
-    prisma.topic.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
-      take: 3,
-      select: {
-        id: true,
-        title: true,
-        sessions: { select: { minutes: true } },
-      },
-    }),
-    prisma.goal.findMany({
-      where: { userId, completed: false },
-      orderBy: { createdAt: "desc" },
-      take: 3,
-      select: { id: true, title: true },
-    }),
-  ])
+const getDashboardData = (userId: string) =>
+  unstable_cache(
+    async () => {
+      const [
+        topicsCount,
+        goalsCount,
+        completedGoals,
+        sessions,
+        recentTopicsRaw,
+        activeGoals,
+      ] = await Promise.all([
+        prisma.topic.count({ where: { userId } }),
+        prisma.goal.count({ where: { userId } }),
+        prisma.goal.count({ where: { userId, completed: true } }),
 
-  return { topicsCount, goalsCount, completedGoals, sessions, recentTopics, activeGoals }
-}
+        // ✅ OPTIMIZED (groupBy instead of findMany)
+        prisma.session.groupBy({
+          by: ["date"],
+          where: {
+            userId,
+            date: { gte: subDays(new Date(), 364) },
+          },
+          _sum: {
+            minutes: true,
+          },
+          orderBy: { date: "asc" },
+        }),
+
+        prisma.topic.findMany({
+          where: { userId },
+          orderBy: { createdAt: "desc" },
+          take: 3,
+          select: {
+            id: true,
+            title: true,
+          },
+        }),
+
+        prisma.goal.findMany({
+          where: { userId, completed: false },
+          orderBy: { createdAt: "desc" },
+          take: 3,
+          select: { id: true, title: true },
+        }),
+      ])
+      const topicIds = recentTopicsRaw.map(t => t.id)
+      const topicMinutes = topicIds.length ===0  ? [] : await prisma.session.groupBy({
+        by: ["topicId"],
+        where: {
+          topicId: { in: topicIds },
+        },
+        _sum: {
+          minutes: true,
+        },
+      })
+      const recentTopics = recentTopicsRaw.map(topic => {
+        const match = topicMinutes.find(t => t.topicId === topic.id)
+        return {
+          ...topic,
+          minutes: match?._sum.minutes || 0,
+        }
+      })
+
+      return {
+        topicsCount,
+        goalsCount,
+        completedGoals,
+        sessions,
+        recentTopics,
+        activeGoals,
+      }
+    },
+    [`dashboard-${userId}`],
+    { tags: [`dashboard-${userId}`], revalidate: 60 } 
+)()
 
 export default async function DashboardPage() {
-  const session = await auth()
-  if (!session?.user?.email) redirect("/login")
-
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { id: true },
-  })
-  if (!user) redirect("/login")
+  const userId = await getUserId()
 
   const {
     topicsCount,
@@ -285,14 +319,14 @@ export default async function DashboardPage() {
     sessions,
     recentTopics,
     activeGoals,
-  } = await getDashboardData(user.id)
+  } = await getDashboardData(userId)
 
   return (
     <div className="flex flex-col gap-8 max-w-5xl">
 
       <div>
         <h1 className="text-2xl py-6 font-semibold tracking-tight">
-          Welcome back, {session.user.name?.split(" ")[0]} 👋
+          Welcome back 👋
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
           Here is your learning overview
@@ -309,7 +343,7 @@ export default async function DashboardPage() {
         <div className="border border-border rounded-xl p-5 bg-card flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <h2 className="font-medium text-sm">Recent topics</h2>
-            <Link href="/topics" className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors">
+            <Link href="/topics" prefetch className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors">
               View all <ArrowRight size={12} />
             </Link>
           </div>
@@ -318,7 +352,7 @@ export default async function DashboardPage() {
           ) : (
             <div className="flex flex-col gap-3">
               {recentTopics.map((topic) => {
-                const totalMinutes = topic.sessions.reduce((sum, s) => sum + s.minutes, 0)
+                const totalMinutes = topic.minutes || 0
                 const hours = Math.floor(totalMinutes / 60)
                 const mins = totalMinutes % 60
                 const timeLabel = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`
@@ -341,7 +375,7 @@ export default async function DashboardPage() {
         <div className="border border-border rounded-xl p-5 bg-card flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <h2 className="font-medium text-sm">Active goals</h2>
-            <Link href="/goals" className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors">
+            <Link href="/goals" prefetch className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors">
               View all <ArrowRight size={12} />
             </Link>
           </div>
@@ -367,7 +401,7 @@ export default async function DashboardPage() {
           <h2 className="font-semibold tracking-tight">Learning activity</h2>
           <p className="text-muted-foreground text-sm mt-0.5">Your study sessions over the last year</p>
         </div>
-        <Heatmap sessions={sessions} />
+        <Heatmap sessions={sessions.map((s) => ({ date: s.date, minutes: s._sum.minutes || 0 }))} />
       </div>
 
     </div>
