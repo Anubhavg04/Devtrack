@@ -32,19 +32,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async signIn({ user }) {
       if (!user.email) return false
-
-      await prisma.user.upsert({
-        where: { email: user.email },
-        update: {
-          name: user.name,
-          image: user.image,
-        },
-        create: {
-          email: user.email,
-          name: user.name,
-          image: user.image,
-        },
-      })
+      try{
+          await prisma.user.upsert({
+            where: { email: user.email },
+            update: {
+              name: user.name,
+              image: user.image,
+            },
+            create: {
+              email: user.email,
+              name: user.name,
+              image: user.image,
+            },
+          })
+        } catch(error){
+          console.error("DB error:", error)
+          return false
+        }    
 
       return true
     },
