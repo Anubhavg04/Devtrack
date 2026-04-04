@@ -36,7 +36,7 @@ const getAnalyticsData = (userId: string) =>
       return { topics, sessions }
     },
     [`analytics-${userId}`],
-    { tags: [`analytics-${userId}`, `topics-${userId}`], revalidate: 60 }
+    { tags: [`analytics-${userId}`, `topics-${userId}`], revalidate: 300 }
   )()
 
 export default async function AnalyticsPage() {

@@ -306,7 +306,7 @@ const getDashboardData = (userId: string) =>
       }
     },
     [`dashboard-${userId}`],
-    { tags: [`dashboard-${userId}`], revalidate: 60 } 
+    { tags: [`dashboard-${userId}`], revalidate: 300 } 
 )()
 
 export default async function DashboardPage() {

@@ -96,7 +96,7 @@ const getGoals = (userId: string) =>
       })
     },
     [`goals-${userId}`],
-    { tags: [`goals-${userId}`], revalidate: 60 }
+    { tags: [`goals-${userId}`], revalidate: 300 }
   )()
 
 export default async function GoalsPage() {

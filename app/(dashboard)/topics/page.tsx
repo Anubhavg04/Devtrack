@@ -28,7 +28,7 @@ const getTopicsWithStats = (userId: string) =>
       })
     },
     [`topics-${userId}`],
-    { tags: [`topics-${userId}`], revalidate: 60 } // matches revalidateTag in actions.ts
+    { tags: [`topics-${userId}`], revalidate: 300 } // matches revalidateTag in actions.ts
   )()
 
 export default async function TopicsPage() {
