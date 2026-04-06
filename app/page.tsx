@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { DemoPreview } from "@/components/demo-preview"
 import {
   BookOpen,
   GitCommit,
@@ -214,6 +215,20 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+      </section>
+      <section className="relative z-10 max-w-6xl mx-auto px-6 py-16">
+        <div className="text-center mb-10">
+          <span className="font-mono text-xs text-muted-foreground uppercase tracking-widest">
+            see it in action
+          </span>
+          <h2 className="text-3xl font-semibold tracking-tight mt-3">
+            Your learning, visualized.
+          </h2>
+          <p className="text-muted-foreground text-sm mt-2 max-w-md mx-auto">
+            Click through the tabs to explore. Sign up to start tracking your own progress.
+          </p>
+        </div>
+        <DemoPreview />
       </section>
 
       {/* Divider */}
