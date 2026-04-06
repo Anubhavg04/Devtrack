@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { notFound } from "next/navigation"
 import { subDays, format, differenceInDays } from "date-fns"
+import { ShareButton } from "@/components/share-button"
 
 function UserAvatar({ avatar, name }: { avatar: string | null, name: string | null }) {
     if (avatar) {
@@ -237,6 +238,8 @@ export default async function PublicProfilePage({
           </div>
         </div>
 
+        {/* Share Button */}
+        <ShareButton username={user.username!}/>
         {/* Footer */}
         <div className="border-t border-green-900 pt-4 flex items-center justify-between">
           <p className="text-xs text-green-700">

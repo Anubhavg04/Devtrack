@@ -39,5 +39,5 @@ export async function saveProfile(formData: FormData) {
 
   revalidatePath("/settings")
   revalidatePath(`/u/${username}`)
-  redirect("/dashboard")
+  redirect(`/u/${username}`)
 }
