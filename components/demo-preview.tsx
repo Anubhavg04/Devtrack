@@ -77,10 +77,10 @@ export function DemoPreview() {
         </div>
 
         {/* App layout */}
-        <div className="flex h-[520px]">
+        <div className="flex h-[420px] md:h-[520px]">
 
           {/* Sidebar */}
-          <div className="w-48 border-r border-border bg-sidebar flex flex-col">
+          <div className="w-36 md:w-48 border-r border-border bg-sidebar flex flex-col">
             <div className="px-4 py-4 border-b border-border">
               <div className="flex items-center gap-2">
                 <BookOpen size={14} className="text-muted-foreground" />
@@ -105,8 +105,8 @@ export function DemoPreview() {
                   `}
                 >
                   <tab.icon size={14} />
-                  {tab.label}
-                </button>
+                  <span className="hidden sm:inline">{tab.label} </span>
+                  </button>
               ))}
             </nav>
 
@@ -438,7 +438,7 @@ function DemoAnalytics() {
 
       <div className="border border-border rounded-xl p-4 bg-card">
         <div className="text-xs text-muted-foreground mb-3 uppercase tracking-widest">// summary</div>
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { key: "total_hours", value: `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m` },
             { key: "topics", value: "4" },
