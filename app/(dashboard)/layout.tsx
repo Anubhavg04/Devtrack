@@ -11,6 +11,7 @@ const navItems = [
   { href: "/topics", label: "Topics" },
   { href: "/goals", label: "Goals" },
   { href: "/analytics", label: "Analytics" },
+  { href: "/settings", label: "Settings" },
 ]
 
 export default async function DashboardLayout({

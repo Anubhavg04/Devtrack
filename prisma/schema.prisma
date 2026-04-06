@@ -12,7 +12,10 @@ model User {
   id        String    @id @default(uuid())
   email     String    @unique
   name      String?
+  displayName  String?
   image     String?
+  avatar    String?
+  username  String?   @unique
   createdAt DateTime  @default(now())
 
   topics    Topic[]
