@@ -1,10 +1,10 @@
-import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { signOut } from "@/auth"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { BookOpen, LogOut } from "lucide-react"
 import { ActiveLink, MobileNavLink } from "@/components/active-link"
+import { getCurrentUser } from "@/lib/getUser"
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
@@ -19,8 +19,8 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const session = await auth()
-  if (!session) redirect("/login")
+  const user = await getCurrentUser()
+  if (!user) redirect("/login")
 
   return (
     <div className="min-h-screen bg-background">
@@ -50,23 +50,23 @@ export default async function DashboardLayout({
 
         <div className="p-3 border-t border-border">
           <div className="flex items-center gap-3 px-3 py-2 mb-1">
-            {session.user?.image ? (
+            {user.image ? (
               <img
-                src={session.user.image}
+                src={user.image}
                 alt="avatar"
                 className="w-7 h-7 rounded-full"
               />
             ) : (
               <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-mono">
-                {session.user?.name?.[0]}
+                {user.name?.[0]}
               </div>
             )}
             <div className="flex flex-col min-w-0">
               <span className="text-sm font-medium truncate">
-                {session.user?.name}
+                {user.name}
               </span>
               <span className="text-xs text-muted-foreground truncate">
-                {session.user?.email}
+                {user.email}
               </span>
             </div>
           </div>
@@ -97,15 +97,15 @@ export default async function DashboardLayout({
           </span>
         </div>
         <div className="flex items-center gap-3">
-          {session.user?.image ? (
+          {user.image ? (
             <img
-              src={session.user.image}
+              src={user.image}
               alt="avatar"
               className="w-7 h-7 rounded-full"
             />
           ) : (
             <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-mono">
-              {session.user?.name?.[0]}
+              {user.name?.[0]}
             </div>
           )}
           <ThemeToggle />

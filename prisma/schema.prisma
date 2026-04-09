@@ -34,6 +34,9 @@ model Session {
 
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@index([userId, topicId])
 }
 
 model Topic {
@@ -46,6 +49,8 @@ model Topic {
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   sessions    Session[]
+
+  @@index([userId, createdAt])
 }
 
 model Goal {
@@ -56,4 +61,6 @@ model Goal {
 
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, completed, createdAt])
 }

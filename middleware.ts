@@ -3,14 +3,20 @@ import { NextResponse } from "next/server"
 
 export default auth((req) => {
   const isLoggedIn = !!req.auth
-  const isOnDashboard = req.nextUrl.pathname.startsWith("/dashboard")
+  const pathname = req.nextUrl.pathname
+  const isProtectedRoute =
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/analytics") ||
+    pathname.startsWith("/settings") ||
+    pathname.startsWith("/topics") ||
+    pathname.startsWith("/goals")
 
-  if (isOnDashboard && !isLoggedIn) {
+  if (isProtectedRoute && !isLoggedIn) {
     return NextResponse.redirect(new URL("/login", req.url))
   }
 })
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/dashboard/:path*", "/analytics/:path*", "/settings/:path*", "/topics/:path*", "/goals/:path*"],
 }
 

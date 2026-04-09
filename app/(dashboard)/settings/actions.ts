@@ -3,7 +3,8 @@
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
-import { revalidatePath } from "next/cache"
+import { revalidatePath, revalidateTag } from "next/cache"
+import { getCurrentUser } from "@/lib/getUser"
 
 export async function saveProfile(formData: FormData) {
   const session = await auth()
@@ -18,11 +19,7 @@ export async function saveProfile(formData: FormData) {
     throw new Error("Username must be 3-20 chars, only letters/numbers/_/-")
   }
 
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { id: true },
-  })
-  if (!user) redirect("/login")
+  const user = await getCurrentUser()
 
   try {
     await prisma.user.update({
@@ -39,5 +36,6 @@ export async function saveProfile(formData: FormData) {
 
   revalidatePath("/settings")
   revalidatePath(`/u/${username}`)
+  revalidateTag(`settings-${user.id}`, "max")
   redirect(`/u/${username}`)
 }

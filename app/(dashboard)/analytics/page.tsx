@@ -8,18 +8,19 @@ import { subDays, format, startOfWeek, endOfWeek } from "date-fns"
 const getAnalyticsData = (userId: string) =>
   unstable_cache(
     async () => {
-      const [topics, sessions] = await Promise.all([
+      const [topics, topicSessions, sessions] = await Promise.all([
         prisma.topic.findMany({
           where: { userId },
           select: {
+            id: true,
             title: true,
-            _count: {
-              select: { sessions: true },
-            },
-            sessions: {
-              select: { minutes: true }, // only minutes needed
-            },
           },
+        }),
+        prisma.session.groupBy({
+          by: ["topicId"],
+          where: { userId },
+          _sum: { minutes: true },
+          _count: { _all: true },
         }),
         prisma.session.groupBy({
           by: ["date"],
@@ -33,7 +34,27 @@ const getAnalyticsData = (userId: string) =>
           orderBy: { date: "asc" },
         }),
       ])
-      return { topics, sessions }
+
+      const topicStatsById = new Map(
+        topicSessions.map((row) => [
+          row.topicId,
+          {
+            minutes: row._sum.minutes ?? 0,
+            sessions: row._count._all,
+          },
+        ])
+      )
+
+      const topicStats = topics.map((topic) => {
+        const stats = topicStatsById.get(topic.id)
+        return {
+          title: topic.title,
+          minutes: stats?.minutes ?? 0,
+          sessions: stats?.sessions ?? 0,
+        }
+      })
+
+      return { topicStats, sessions }
     },
     [`analytics-${userId}`],
     { tags: [`analytics-${userId}`, `topics-${userId}`], revalidate: 300 }
@@ -41,18 +62,7 @@ const getAnalyticsData = (userId: string) =>
 
 export default async function AnalyticsPage() {
   const userId = await getUserId()
-  const { topics, sessions } = await getAnalyticsData(userId)
-
-  // All computation stays in JS exactly as before — only the DB query changed
-  const topicStats = topics.map((topic) => {
-    const totalMinutes = topic.sessions.reduce((sum, s) => sum + s.minutes, 0)
-  
-    return {
-      title: topic.title,
-      minutes: totalMinutes,
-      sessions: topic._count.sessions,
-    }
-  })
+  const { topicStats, sessions } = await getAnalyticsData(userId)
 
   const totalMinutes = topicStats.reduce((sum, t) => sum + t.minutes, 0)
 

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { notFound } from "next/navigation"
+import { unstable_cache } from "next/cache"
 import { subDays, format, differenceInDays } from "date-fns"
 import { ShareButton } from "@/components/share-button"
 
@@ -40,6 +41,45 @@ function UserAvatar({ avatar, name }: { avatar: string | null, name: string | nu
     )
 }
 
+const getPublicProfile = (username: string) =>
+  unstable_cache(
+    async() => {
+      return await prisma.user.findUnique({
+        where: { username },
+        select: {
+          name: true,
+          image: true,
+          username: true,
+          avatar: true,
+          displayName: true,
+          createdAt: true,
+          topics: {
+            select: {
+              title: true,
+              createdAt: true,
+              sessions: {
+                select: { minutes: true, date: true },
+              },
+            },
+            orderBy: { createdAt: "desc" },
+          },
+          goals: {
+            select: { completed: true },
+          },
+          sessions: {
+            where: {
+              date: { gte: subDays(new Date(), 364) },
+            },
+            select: { date: true, minutes: true },
+            orderBy: { date: "asc" },
+          },
+        },
+      })
+    },
+    [`profile-${username}`],
+    {revalidate: 300}
+  )()
+
 export default async function PublicProfilePage({
   params,
 }: {
@@ -47,40 +87,8 @@ export default async function PublicProfilePage({
 }) {
   const { username } = await params
 
-  const user = await prisma.user.findUnique({
-    where: { username },
-    select: {
-      name: true,
-      image: true,
-      username: true,
-      avatar: true,
-      displayName: true,
-      createdAt: true,
-      topics: {
-        select: {
-          title: true,
-          createdAt: true,
-          sessions: {
-            select: { minutes: true, date: true },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-      },
-      goals: {
-        select: { completed: true },
-      },
-      sessions: {
-        where: {
-          date: { gte: subDays(new Date(), 364) },
-        },
-        select: { date: true, minutes: true },
-        orderBy: { date: "asc" },
-      },
-    },
-  })
-
-  if (!user) notFound()
-
+  const user = await getPublicProfile(username)
+  if(!user) notFound()
   const totalMinutes = user.topics.reduce(
     (sum, t) => sum + t.sessions.reduce((s, se) => s + se.minutes, 0),
     0

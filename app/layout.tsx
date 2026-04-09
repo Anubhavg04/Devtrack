@@ -47,7 +47,6 @@
 import type { Metadata } from "next"
 import { Inter, IBM_Plex_Mono } from "next/font/google"
 import "./globals.css"
-import { SessionProvider } from "next-auth/react"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Analytics } from "@vercel/analytics/next"
 
@@ -79,13 +78,8 @@ export default function RootLayout({
         className={`${inter.variable} ${ibmPlexMono.variable} min-h-full bg-background text-foreground antialiased`}
       >
         <ThemeProvider>
-          <SessionProvider
-            refetchInterval={0}
-            refetchOnWindowFocus={false}
-          >
-            {children}
-            <Analytics />
-          </SessionProvider>
+          {children}
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>

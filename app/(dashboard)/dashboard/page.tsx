@@ -223,91 +223,11 @@
 // }
 
 
-// import { auth } from "@/auth"
-import { prisma } from "@/lib/prisma"
-import { unstable_cache } from "next/cache" 
 import { getUserId } from "@/lib/getUser"
-// import { redirect } from "next/navigation"
+import { getDashboardData } from "@/lib/dashboard-data"
 import { Heatmap } from "@/components/heatmaps"
-import { subDays } from "date-fns"
 import { BookOpen, Target, CheckCircle2, ArrowRight } from "lucide-react"
 import Link from "next/link"
-
-const getDashboardData = (userId: string) =>
-  unstable_cache(
-    async () => {
-      const [
-        topicsCount,
-        goalsCount,
-        completedGoals,
-        sessions,
-        recentTopicsRaw,
-        activeGoals,
-      ] = await Promise.all([
-        prisma.topic.count({ where: { userId } }),
-        prisma.goal.count({ where: { userId } }),
-        prisma.goal.count({ where: { userId, completed: true } }),
-
-        // ✅ OPTIMIZED (groupBy instead of findMany)
-        prisma.session.groupBy({
-          by: ["date"],
-          where: {
-            userId,
-            date: { gte: subDays(new Date(), 364) },
-          },
-          _sum: {
-            minutes: true,
-          },
-          orderBy: { date: "asc" },
-        }),
-
-        prisma.topic.findMany({
-          where: { userId },
-          orderBy: { createdAt: "desc" },
-          take: 3,
-          select: {
-            id: true,
-            title: true,
-          },
-        }),
-
-        prisma.goal.findMany({
-          where: { userId, completed: false },
-          orderBy: { createdAt: "desc" },
-          take: 3,
-          select: { id: true, title: true },
-        }),
-      ])
-      const topicIds = recentTopicsRaw.map(t => t.id)
-      const topicMinutes = topicIds.length ===0  ? [] : await prisma.session.groupBy({
-        by: ["topicId"],
-        where: {
-          topicId: { in: topicIds },
-        },
-        _sum: {
-          minutes: true,
-        },
-      })
-      const recentTopics = recentTopicsRaw.map(topic => {
-        const match = topicMinutes.find(t => t.topicId === topic.id)
-        return {
-          ...topic,
-          minutes: match?._sum.minutes || 0,
-        }
-      })
-
-      return {
-        topicsCount,
-        goalsCount,
-        completedGoals,
-        sessions,
-        recentTopics,
-        activeGoals,
-      }
-    },
-    [`dashboard-${userId}`],
-    { tags: [`dashboard-${userId}`], revalidate: 300 } 
-)()
 
 export default async function DashboardPage() {
   const userId = await getUserId()

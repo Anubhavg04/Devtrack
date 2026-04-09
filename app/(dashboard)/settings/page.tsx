@@ -1,18 +1,13 @@
-import { auth } from "@/auth"
-import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { saveProfile } from "./actions"
 import { SubmitButton } from "@/components/submitbutton"
 import { AvatarPicker } from "@/components/avatar-picker"
+import { getCurrentUser } from "@/lib/getUser"
+import { getSettingsData } from "@/lib/settings-data"
 
 export default async function SettingsPage() {
-  const session = await auth()
-  if (!session?.user?.email) redirect("/login")
-
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { id: true, username: true, name: true, displayName: true, avatar: true },
-  })
+  const currentUser = await getCurrentUser()
+  const user = await getSettingsData(currentUser.id)
   if (!user) redirect("/login")
 
   return (
