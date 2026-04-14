@@ -63,11 +63,13 @@ export default async function DashboardLayout({
             )}
             <div className="flex flex-col min-w-0">
               <span className="text-sm font-medium truncate">
-                {user.name}
+                {user.displayName ?? user.name ?? "Profile"}
               </span>
-              <span className="text-xs text-muted-foreground truncate">
-                {user.email}
-              </span>
+              {user.username ? (
+                <span className="text-xs text-muted-foreground truncate">
+                  @{user.username}
+                </span>
+              ) : null}
             </div>
           </div>
           <form action={async () => {

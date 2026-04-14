@@ -2,13 +2,14 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, BookOpen, Target, BarChart2 } from "lucide-react"
+import { LayoutDashboard, BookOpen, Target, BarChart2, Settings } from "lucide-react"
 
 const icons = {
   "/dashboard": LayoutDashboard,
   "/topics": BookOpen,
   "/goals": Target,
   "/analytics": BarChart2,
+  "/settings": Settings,
 } as const
 
 type Props = {

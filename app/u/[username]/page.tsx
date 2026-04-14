@@ -4,6 +4,23 @@ import { unstable_cache } from "next/cache"
 import { subDays, format, differenceInDays } from "date-fns"
 import { ShareButton } from "@/components/share-button"
 
+type PublicProfile = {
+  name: string | null
+  image: string | null
+  username: string | null
+  avatar: string | null
+  displayName: string | null
+  bio: string | null
+  createdAt: Date
+  topics: Array<{
+    title: string
+    createdAt: Date
+    sessions: Array<{ minutes: number; date: Date }>
+  }>
+  goals: Array<{ completed: boolean }>
+  sessions: Array<{ date: Date; minutes: number }>
+}
+
 function UserAvatar({ avatar, name }: { avatar: string | null, name: string | null }) {
     if (avatar) {
       const [emoji, color] = avatar.split("::")
@@ -44,7 +61,7 @@ function UserAvatar({ avatar, name }: { avatar: string | null, name: string | nu
 const getPublicProfile = (username: string) =>
   unstable_cache(
     async() => {
-      return await prisma.user.findUnique({
+      const user = await prisma.user.findUnique({
         where: { username },
         select: {
           name: true,
@@ -52,6 +69,7 @@ const getPublicProfile = (username: string) =>
           username: true,
           avatar: true,
           displayName: true,
+          bio: true,
           createdAt: true,
           topics: {
             select: {
@@ -74,7 +92,9 @@ const getPublicProfile = (username: string) =>
             orderBy: { date: "asc" },
           },
         },
-      })
+      } as never)
+
+      return user as PublicProfile | null
     },
     [`profile-${username}`],
     {revalidate: 300}
@@ -157,6 +177,9 @@ export default async function PublicProfilePage({
             <div>
               <h1 className="text-2xl font-bold text-green-300">{user.displayName ?? user.name}</h1>
               <p className="text-green-600 text-sm">@{user.username} · Devtrack user for {memberDays} days</p>
+              {user.bio ? (
+                <p className="text-green-500/90 text-sm mt-2 max-w-xl">{user.bio}</p>
+              ) : null}
             </div>
           </div>
         </div>
