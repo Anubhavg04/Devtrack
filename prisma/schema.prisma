@@ -22,6 +22,73 @@ model User {
   topics    Topic[]
   goals     Goal[]
   sessions  Session[]
+  githubAccount GithubAccount?
+  trackedRepos  TrackedRepo[]
+}
+
+enum RepoStatus {
+  planned
+  in_progress
+  completed
+}
+
+model GithubAccount {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  githubUserId String
+  login        String
+  accessToken  String
+  scope        String?
+  connectedAt  DateTime @default(now())
+  lastSyncedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([githubUserId])
+}
+
+model TrackedRepo {
+  id             String     @id @default(uuid())
+  userId         String
+  githubRepoId   String
+  owner          String
+  name           String
+  fullName       String
+  isPrivate      Boolean    @default(false)
+  defaultBranch  String?
+  url            String
+  status         RepoStatus @default(planned)
+  startedAt      DateTime?
+  completedAt    DateTime?
+  archivedAt     DateTime?
+  lastActivityAt DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  snapshots RepoSnapshot[]
+
+  @@unique([userId, githubRepoId])
+  @@unique([userId, fullName])
+  @@index([userId, status, updatedAt])
+}
+
+model RepoSnapshot {
+  id               String   @id @default(uuid())
+  trackedRepoId    String
+  snapshotDate     DateTime
+  commitCount7d    Int      @default(0)
+  prOpened7d       Int      @default(0)
+  prMerged7d       Int      @default(0)
+  issuesOpened7d   Int      @default(0)
+  contributorsCount Int     @default(0)
+  activeDays7d     Int      @default(0)
+  createdAt        DateTime @default(now())
+
+  trackedRepo TrackedRepo @relation(fields: [trackedRepoId], references: [id], onDelete: Cascade)
+
+  @@unique([trackedRepoId, snapshotDate])
+  @@index([snapshotDate])
 }
 
 model Session {

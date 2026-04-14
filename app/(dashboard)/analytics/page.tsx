@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { unstable_cache } from "next/cache"
 import { getUserId } from "@/lib/getUser"
 import { subDays, format, startOfWeek, endOfWeek } from "date-fns"
+import { getReposDashboardData } from "@/lib/github/metrics"
 
 const getAnalyticsData = (userId: string) =>
   unstable_cache(
@@ -62,7 +63,10 @@ const getAnalyticsData = (userId: string) =>
 
 export default async function AnalyticsPage() {
   const userId = await getUserId()
-  const { topicStats, sessions } = await getAnalyticsData(userId)
+  const [{ topicStats, sessions }, repoData] = await Promise.all([
+    getAnalyticsData(userId),
+    getReposDashboardData(userId),
+  ])
 
   const totalMinutes = topicStats.reduce((sum, t) => sum + t.minutes, 0)
 
@@ -113,9 +117,10 @@ export default async function AnalyticsPage() {
         <div className="text-xs text-muted-foreground py-6 uppercase tracking-widest mb-1">
           <h3 className="text-xl font-semibold tracking-tight">Analytics</h3>
         </div>
-        <h1 className="text-xl py-1 font-semibold tracking-tight">
-          $ learning --report --user={userId}
-        </h1>
+        <h1 className="text-xl py-1 font-semibold tracking-tight">Learning Report</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          See your learning activity trends and performance insights.
+        </p>
       </div>
 
       {/* Summary block */}
@@ -274,6 +279,49 @@ export default async function AnalyticsPage() {
         </div>
       )}
 
+      {/* Repo Intelligence */}
+      <div className="border border-border rounded-xl p-5 bg-card">
+        <div className="text-xs text-muted-foreground mb-4 uppercase tracking-widest">
+          // repo_intelligence
+        </div>
+        {!repoData.connection ? (
+          <div className="text-sm text-muted-foreground">
+            GitHub not connected yet. Connect and import repos in /repos.
+          </div>
+        ) : repoData.repos.length === 0 ? (
+          <div className="text-sm text-muted-foreground">
+            No tracked repositories yet. Import selected repositories in /repos.
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <RepoMiniStat label="tracked_repos" value={`${repoData.summary.totalRepos}`} />
+              <RepoMiniStat label="active_repos" value={`${repoData.summary.activeRepos}`} />
+              <RepoMiniStat label="completed_repos" value={`${repoData.summary.completedRepos}`} />
+              <RepoMiniStat label="commits_7d" value={`${repoData.summary.totalCommits7d}`} />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              {repoData.statusBreakdown.map((row) => (
+                <div key={row.label} className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">{row.label}</span>
+                  <span className="font-semibold">{row.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+    </div>
+  )
+}
+
+function RepoMiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-border rounded-lg p-3">
+      <div className="text-[11px] text-muted-foreground">{label}</div>
+      <div className="text-lg font-semibold mt-1">{value}</div>
     </div>
   )
 }

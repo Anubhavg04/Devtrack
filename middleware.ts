@@ -7,6 +7,7 @@ export default auth((req) => {
   const isProtectedRoute =
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/analytics") ||
+    pathname.startsWith("/repos") ||
     pathname.startsWith("/settings") ||
     pathname.startsWith("/topics") ||
     pathname.startsWith("/goals")
@@ -17,6 +18,6 @@ export default auth((req) => {
 })
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/analytics/:path*", "/settings/:path*", "/topics/:path*", "/goals/:path*"],
+  matcher: ["/dashboard/:path*", "/analytics/:path*", "/repos/:path*", "/settings/:path*", "/topics/:path*", "/goals/:path*"],
 }
 
