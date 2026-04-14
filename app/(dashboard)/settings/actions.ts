@@ -16,7 +16,7 @@ export async function saveProfile(formData: FormData) {
   const avatar = formData.get("avatar") as string
   const avatarColor = formData.get("avatarColor") as string
   const onboarding = formData.get("onboarding") === "1"
-  const intent = formData.get("intent")
+  const intent = (formData.get("intent") as string | null) ?? ""
 
   const hasUsername = username.length > 0
 
@@ -36,7 +36,7 @@ export async function saveProfile(formData: FormData) {
       data: {
         username: hasUsername ? username : user.username ?? null,
         displayName: displayName || null,
-        bio: intent === "continue-dashboard" ? user.bio ?? null : (bio?.trim() ? bio.trim().slice(0, 280) : null),
+        bio: bio?.trim() ? bio.trim().slice(0, 280) : null,
         avatar: avatar ? `${avatar}::${avatarColor}` : avatarColor || null,
       } as never,
     })
