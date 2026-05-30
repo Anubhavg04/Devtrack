@@ -50,8 +50,6 @@ export async function saveProfile(formData: FormData) {
   revalidatePath("/settings")
   revalidatePath("/share")
   if (hasUsername) revalidatePath(`/u/${username}`)
-  revalidateTag(`settings-${user.id}`)
-
   if (onboarding || intent === "continue-dashboard") {
     redirect("/dashboard")
   }
