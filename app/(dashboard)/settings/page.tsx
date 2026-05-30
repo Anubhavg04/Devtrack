@@ -9,9 +9,9 @@ import { Settings, User, Shield } from "lucide-react"
 export default async function SettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ onboarding?: string }>
+  searchParams: Promise<{ onboarding?: string; success?: string; error?: string }>
 }) {
-  const { onboarding } = await searchParams
+  const { onboarding, success, error } = await searchParams
   const isOnboarding = onboarding === "1"
   const currentUser = await getCurrentUser()
   const user = await getSettingsData(currentUser.id)
@@ -28,6 +28,20 @@ export default async function SettingsPage({
           {isOnboarding ? "Complete your profile to continue to dashboard" : "Manage your public profile and account"}
         </p>
       </div>
+
+      {success === "1" && !error && (
+        <div className="bg-green-500/10 border border-green-500/20 text-green-500 rounded-xl p-4 flex items-center gap-2">
+          <Shield className="w-5 h-5" />
+          <span className="font-medium text-sm">Profile settings saved successfully!</span>
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl p-4 flex items-center gap-2">
+          <Shield className="w-5 h-5" />
+          <span className="font-medium text-sm">{error}</span>
+        </div>
+      )}
 
       <form action={saveProfile} className="flex flex-col gap-6">
         <input type="hidden" name="onboarding" value={isOnboarding ? "1" : "0"} />
@@ -46,18 +60,9 @@ export default async function SettingsPage({
             name="displayName"
             placeholder="e.g. Anubhav Gupta"
             defaultValue={user.displayName ?? user.name ?? ""}
-            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full px-3 py-2 rounded-lg border border-border bg-background dark:bg-white/10 dark:border-white/20 text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
           />
-          {isOnboarding ? (
-            <button
-              type="submit"
-              name="intent"
-              value="continue-dashboard"
-              className="w-fit px-4 py-2 rounded-lg border border-border bg-background hover:bg-accent text-sm"
-            >
-              Continue to dashboard
-            </button>
-          ) : null}
+
         </div>
 
         <div className="border border-border rounded-xl p-6 flex flex-col gap-4">
@@ -70,7 +75,7 @@ export default async function SettingsPage({
             placeholder="e.g. anubhav"
             defaultValue={user.username ?? ""}
             required={!isOnboarding}
-            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full px-3 py-2 rounded-lg border border-border bg-background dark:bg-white/10 dark:border-white/20 text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
           />
         </div>
 
@@ -85,11 +90,11 @@ export default async function SettingsPage({
             defaultValue={user.bio ?? ""}
             maxLength={280}
             rows={4}
-            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+            className="w-full px-3 py-2 rounded-lg border border-border bg-background dark:bg-white/10 dark:border-white/20 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none transition-colors"
           />
         </div>
 
-        <AvatarPicker defaultAvatar={user.avatar} />
+        <AvatarPicker defaultAvatar={user.avatar} username={user.username || user.name || "user"} />
 
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <Shield className="h-4 w-4" />
@@ -104,14 +109,15 @@ export default async function SettingsPage({
           <input
             value={user.email}
             readOnly
-            className="w-full px-3 py-2 rounded-lg border border-border bg-muted text-sm text-muted-foreground"
+            className="w-full px-3 py-2 rounded-lg border border-border bg-muted dark:bg-white/20 dark:border-white/30 text-sm text-muted-foreground"
           />
         </div>
 
         <SubmitButton
-          label={isOnboarding ? "Save and continue" : "Save profile"}
-          loadingLabel="Saving..."
-          className="self-start"
+          label={isOnboarding ? "Save & Continue to Dashboard →" : "Save profile"}
+          loadingLabel={isOnboarding ? "Saving profile..." : "Saving..."}
+          size={isOnboarding ? "lg" : "default"}
+          className={isOnboarding ? "w-full text-base font-semibold mt-4 shadow-lg shadow-primary/20 animate-in fade-in slide-in-from-bottom-4" : "self-start"}
         />
       </form>
     </div>

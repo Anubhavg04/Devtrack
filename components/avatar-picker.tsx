@@ -1,79 +1,79 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { DICEBEAR_COLLECTIONS } from "./user-avatar"
+import { Dices } from "lucide-react"
 
-const EMOJI_AVATARS = ["🧑‍💻", "👨‍🚀", "🦊", "🐉", "⚡", "🎯", "🔥", "🌙", "🦁", "🐺"]
-const COLORS = [
-  { name: "green", bg: "bg-green-500", value: "#22c55e" },
-  { name: "blue", bg: "bg-blue-500", value: "#3b82f6" },
-  { name: "purple", bg: "bg-purple-500", value: "#a855f7" },
-  { name: "orange", bg: "bg-orange-500", value: "#f97316" },
-  { name: "pink", bg: "bg-pink-500", value: "#ec4899" },
-  { name: "cyan", bg: "bg-cyan-500", value: "#06b6d4" },
-  { name: "red", bg: "bg-red-500", value: "#ef4444" },
-  { name: "yellow", bg: "bg-yellow-500", value: "#eab308" },
-]
+export function AvatarPicker({ defaultAvatar, username }: { defaultAvatar?: string | null, username?: string }) {
+  const [collection, setCollection] = useState<typeof DICEBEAR_COLLECTIONS[number]>("bottts")
+  const [seed, setSeed] = useState(username || "user")
 
-export function AvatarPicker({ defaultAvatar }: { defaultAvatar?: string | null }) {
-  const [emoji, color] = defaultAvatar?.split("::") ?? []
-  const [selectedEmoji, setSelectedEmoji] = useState(emoji ?? "")
-  const [selectedColor, setSelectedColor] = useState(color ?? "#22c55e")
+  // Initialize from defaultAvatar
+  useEffect(() => {
+    if (defaultAvatar && defaultAvatar.startsWith("dicebear::")) {
+      const [, c, s] = defaultAvatar.split("::")
+      if (c && DICEBEAR_COLLECTIONS.includes(c as any)) {
+        setCollection(c as any)
+      }
+      if (s) {
+        setSeed(s)
+      }
+    }
+  }, [defaultAvatar])
+
+  const generateRandomSeed = () => {
+    setSeed(Math.random().toString(36).substring(2, 10))
+  }
+
+  const previewUrl = `https://api.dicebear.com/7.x/${collection}/svg?seed=${encodeURIComponent(seed)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffdfbf,ffd5dc`
 
   return (
     <div className="flex flex-col gap-6">
       {/* Preview */}
       <div className="flex items-center gap-4">
-        <div
-          className="w-16 h-16 rounded-full flex items-center justify-center text-3xl border-2 border-border"
-          style={{ backgroundColor: selectedColor + "33" }}
-        >
-          {selectedEmoji || "👤"}
+        <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-border flex-shrink-0 bg-muted">
+          <img src={previewUrl} alt="Avatar Preview" className="w-full h-full object-cover" />
         </div>
-        <p className="text-sm text-muted-foreground">Preview</p>
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-medium text-foreground">Avatar Preview</p>
+          <button
+            type="button"
+            onClick={generateRandomSeed}
+            className="flex items-center gap-1.5 text-xs font-semibold bg-primary text-primary-foreground px-3 py-1.5 rounded-full hover:bg-primary/90 transition-colors shadow-sm"
+          >
+            <Dices size={14} />
+            Shuffle Seed
+          </button>
+        </div>
       </div>
 
-      {/* Emoji */}
+      {/* Collection Picker */}
       <div className="border border-border rounded-xl p-4 flex flex-col gap-3">
-        <h3 className="text-sm font-medium">Choose Emoji</h3>
-        <div className="flex flex-wrap gap-2">
-          {EMOJI_AVATARS.map((e) => (
+        <h3 className="text-sm font-medium">Choose Art Style</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {DICEBEAR_COLLECTIONS.map((c) => (
             <button
-              key={e}
+              key={c}
               type="button"
-              onClick={() => setSelectedEmoji(e)}
-              className={`w-10 h-10 rounded-xl border-2 text-xl transition-all
-                ${selectedEmoji === e
-                  ? "border-primary bg-primary/10 scale-110"
-                  : "border-border hover:border-primary"
+              onClick={() => setCollection(c)}
+              className={`flex flex-col items-center gap-2 p-2 rounded-xl border-2 transition-all
+                ${collection === c
+                  ? "border-primary bg-primary/5 shadow-sm"
+                  : "border-border hover:border-primary/50"
                 }`}
             >
-              {e}
+              <img 
+                src={`https://api.dicebear.com/7.x/${c}/svg?seed=example&backgroundColor=b6e3f4,c0aede,d1d4f9,ffdfbf,ffd5dc`} 
+                alt={c} 
+                className="w-10 h-10 rounded-full"
+              />
+              <span className="text-xs font-medium capitalize">{c}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Color */}
-      <div className="border border-border rounded-xl p-4 flex flex-col gap-3">
-        <h3 className="text-sm font-medium">Choose Color</h3>
-        <div className="flex flex-wrap gap-2">
-          {COLORS.map((c) => (
-            <button
-              key={c.name}
-              type="button"
-              onClick={() => setSelectedColor(c.value)}
-              className={`w-8 h-8 rounded-full ${c.bg} transition-all
-                ${selectedColor === c.value
-                  ? "scale-125 ring-2 ring-white ring-offset-2"
-                  : "hover:scale-110"
-                }`}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Hidden inputs for form */}
-      <input type="hidden" name="avatar" value={selectedEmoji} />
-      <input type="hidden" name="avatarColor" value={selectedColor} />
+      {/* Hidden input for form */}
+      <input type="hidden" name="avatar" value={`dicebear::${collection}::${seed}`} />
     </div>
   )
 }

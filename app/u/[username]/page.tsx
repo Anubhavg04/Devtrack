@@ -3,6 +3,8 @@ import { notFound } from "next/navigation"
 import { unstable_cache } from "next/cache"
 import { subDays, format, differenceInDays } from "date-fns"
 import { ShareButton } from "@/components/share-button"
+import { getCurrentUser } from "@/lib/getUser"
+import { ArrowLeft } from "lucide-react"
 
 type PublicProfile = {
   name: string | null
@@ -21,42 +23,7 @@ type PublicProfile = {
   sessions: Array<{ date: Date; minutes: number }>
 }
 
-function UserAvatar({ avatar, name }: { avatar: string | null, name: string | null }) {
-    if (avatar) {
-      const [emoji, color] = avatar.split("::")
-      
-      // Emoji + color dono hain
-      if (emoji && color && emoji.length <= 2) {
-        return (
-          <div 
-            className="w-14 h-14 rounded-full border-2 border-green-800 flex items-center justify-center text-2xl"
-            style={{ backgroundColor: color + "33" }}
-          >
-            {emoji}
-          </div>
-        )
-      }
-      
-      // Sirf color hai
-      if (avatar.startsWith("#")) {
-        return (
-          <div
-            className="w-14 h-14 rounded-full border-2 border-green-800 flex items-center justify-center text-xl font-bold text-white"
-            style={{ backgroundColor: avatar }}
-          >
-            {name?.[0]?.toUpperCase()}
-          </div>
-        )
-      }
-    }
-  
-    // Default — Google image ya initials
-    return (
-      <div className="w-14 h-14 rounded-full border-2 border-green-800 flex items-center justify-center text-xl font-bold text-green-400 bg-green-950">
-        {name?.[0]?.toUpperCase()}
-      </div>
-    )
-}
+import { UserAvatar } from "@/components/user-avatar"
 
 const getPublicProfile = (username: string) =>
   unstable_cache(
@@ -107,7 +74,11 @@ export default async function PublicProfilePage({
 }) {
   const { username } = await params
 
-  const user = await getPublicProfile(username)
+  const [user, currentUser] = await Promise.all([
+    getPublicProfile(username),
+    getCurrentUser().catch(() => null),
+  ])
+
   if(!user) notFound()
   const totalMinutes = user.topics.reduce(
     (sum, t) => sum + t.sessions.reduce((s, se) => s + se.minutes, 0),
@@ -158,8 +129,18 @@ export default async function PublicProfilePage({
   const topTopic = topicStats[0]
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-green-400 font-mono p-6 md:p-12">
-      <div className="max-w-3xl mx-auto flex flex-col gap-8">
+    <div className="min-h-screen bg-[#0a0a0a] text-green-400 font-mono p-6 md:p-12 relative">
+      {currentUser && (
+        <a 
+          href="/dashboard" 
+          className="absolute top-4 left-4 md:top-8 md:left-8 flex items-center gap-2 text-green-600 hover:text-green-400 transition-colors bg-green-950/20 px-3 py-1.5 rounded-lg border border-green-900/50"
+        >
+          <ArrowLeft size={14} />
+          <span className="text-sm">Back to app</span>
+        </a>
+      )}
+      
+      <div className="max-w-3xl mx-auto flex flex-col gap-8 mt-10 md:mt-0">
 
         {/* Terminal header */}
         <div className="flex items-center gap-2 mb-2">
@@ -173,7 +154,13 @@ export default async function PublicProfilePage({
         <div className="flex flex-col gap-3">
           <p className="text-green-600 text-sm">$ whoami</p>
           <div className="flex items-center gap-4">
-            <UserAvatar avatar={user.avatar} name={user.name ?? user.name} />
+            <UserAvatar 
+              avatar={user.avatar} 
+              name={user.username || user.name} 
+              image={user.image}
+              size={56} 
+              className="border-2 border-green-800 shadow-lg shadow-green-900/20"
+            />
             <div>
               <h1 className="text-2xl font-bold text-green-300">{user.displayName ?? user.name}</h1>
               <p className="text-green-600 text-sm">@{user.username} · Devtrack user for {memberDays} days</p>
@@ -191,7 +178,7 @@ export default async function PublicProfilePage({
             {[
               { key: "total_hours", value: `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m` },
               { key: "topics", value: `${user.topics.length}` },
-              { key: "sessions", value: `${totalSessions}` },
+              { key: "total_xp", value: `${totalMinutes * 10} XP` },
               { key: "streak", value: `${streak} 🔥` },
             ].map((s) => (
               <div key={s.key} className="border border-green-900 rounded-lg p-3 bg-green-950/20">

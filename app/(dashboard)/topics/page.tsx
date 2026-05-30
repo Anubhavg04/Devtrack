@@ -5,6 +5,7 @@ import { unstable_cache } from "next/cache"
 import { getUserId } from "@/lib/getUser"
 import { addTopic, deleteTopic, logSession } from "./actions"
 import { SubmitButton } from "@/components/submitbutton"
+import { Flame } from "lucide-react"
 
 
 const getTopicsWithStats = (userId: string) =>
@@ -22,7 +23,7 @@ const getTopicsWithStats = (userId: string) =>
             select: { sessions: true }, // count done in DB, not in JS
           },
           sessions: {
-            select: { minutes: true }, // only fetch minutes, not full session rows
+            select: { minutes: true, date: true }, // fetch minutes and date for 'today' calc
           },
         },
       })
@@ -81,13 +82,24 @@ export default async function TopicsPage() {
       ) : (
         <div className="flex flex-col gap-4">
           {topics.map((topic) => {
-            // ✅ Aggregate minutes in JS from the lean sessions array
+            const today = new Date()
+            today.setHours(0, 0, 0, 0)
+
             const totalMinutes = topic.sessions.reduce(
               (sum, s) => sum + s.minutes,
               0
             )
+            const todayMinutes = topic.sessions.reduce((sum, s) => {
+              const sessionDate = new Date(s.date)
+              sessionDate.setHours(0, 0, 0, 0)
+              return sessionDate.getTime() === today.getTime() ? sum + s.minutes : sum
+            }, 0)
+
             const hours = Math.floor(totalMinutes / 60)
             const mins = totalMinutes % 60
+            
+            const tHours = Math.floor(todayMinutes / 60)
+            const tMins = todayMinutes % 60
 
             return (
               <div
@@ -103,15 +115,22 @@ export default async function TopicsPage() {
                         {topic.description}
                       </p>
                     )}
-                    <p className="text-sm mt-2">
-                      <span className="font-medium">
-                        {hours > 0 ? `${hours}h ${mins}m` : `${mins}m`}
-                      </span>
-                      <span className="text-muted-foreground">
-                        {/* ✅ Use _count from DB instead of topic.sessions.length */}
-                        {" "}total · {topic._count.sessions} sessions
-                      </span>
-                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <p className="text-sm">
+                        <span className="font-medium">
+                          {hours > 0 ? `${hours}h ${mins}m` : `${mins}m`}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {" "}total · {topic._count.sessions} sessions
+                        </span>
+                      </p>
+                      {todayMinutes > 0 && (
+                        <span className="text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <Flame className="w-3 h-3" />
+                          {tHours > 0 ? `${tHours}h ${tMins}m today` : `${tMins}m today`}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Delete button */}

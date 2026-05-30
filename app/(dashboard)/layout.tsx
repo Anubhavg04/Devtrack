@@ -5,12 +5,16 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { BookOpen, LogOut } from "lucide-react"
 import { ActiveLink, MobileNavLink } from "@/components/active-link"
 import { getCurrentUser } from "@/lib/getUser"
+import { UserAvatar } from "@/components/user-avatar"
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/focus", label: "Focus Timer" },
   { href: "/topics", label: "Topics" },
   { href: "/goals", label: "Goals" },
   { href: "/analytics", label: "Analytics" },
+  { href: "/leaderboard", label: "Leaderboard" },
+  { href: "/share", label: "Share Profile" },
   { href: "/settings", label: "Settings" },
 ]
 
@@ -50,17 +54,12 @@ export default async function DashboardLayout({
 
         <div className="p-3 border-t border-border">
           <div className="flex items-center gap-3 px-3 py-2 mb-1">
-            {user.image ? (
-              <img
-                src={user.image}
-                alt="avatar"
-                className="w-7 h-7 rounded-full"
-              />
-            ) : (
-              <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-mono">
-                {user.name?.[0]}
-              </div>
-            )}
+            <UserAvatar 
+              avatar={user.avatar} 
+              name={user.username || user.name} 
+              image={user.image} 
+              size={28} 
+            />
             <div className="flex flex-col min-w-0">
               <span className="text-sm font-medium truncate">
                 {user.displayName ?? user.name ?? "Profile"}
@@ -99,17 +98,12 @@ export default async function DashboardLayout({
           </span>
         </div>
         <div className="flex items-center gap-3">
-          {user.image ? (
-            <img
-              src={user.image}
-              alt="avatar"
-              className="w-7 h-7 rounded-full"
-            />
-          ) : (
-            <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-mono">
-              {user.name?.[0]}
-            </div>
-          )}
+          <UserAvatar 
+            avatar={user.avatar} 
+            name={user.username || user.name} 
+            image={user.image} 
+            size={28} 
+          />
           <ThemeToggle />
         </div>
       </header>

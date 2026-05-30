@@ -241,6 +241,9 @@ export default async function DashboardPage() {
     activeGoals,
   } = await getDashboardData(userId)
 
+  const totalMinutes = sessions.reduce((sum, s) => sum + (s._sum.minutes || 0), 0)
+  const totalXp = totalMinutes * 10
+
   return (
     <div className="flex flex-col gap-8 max-w-5xl">
 
@@ -253,10 +256,11 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard icon={BookOpen} label="Topics tracking" value={topicsCount} color="blue" />
-        <StatCard icon={Target} label="Total goals" value={goalsCount} color="purple" />
-        <StatCard icon={CheckCircle2} label="Goals completed" value={completedGoals} color="green" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard icon={BookOpen} label="Topics" value={topicsCount} color="blue" />
+        <StatCard icon={Target} label="Goals" value={goalsCount} color="purple" />
+        <StatCard icon={CheckCircle2} label="Completed" value={completedGoals} color="green" />
+        <StatCard icon={BookOpen} label="Total XP" value={totalXp} color="purple" />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

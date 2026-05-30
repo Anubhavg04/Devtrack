@@ -31,6 +31,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   pages: {
     signIn: "/login",
-    newUser: "/settings?onboarding=1",
+  },
+  events: {
+    async signIn({ user }) {
+      if (user?.id) {
+        try {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { lastLoginAt: new Date() },
+          })
+        } catch (error) {
+          console.error("Failed to update lastLoginAt", error)
+        }
+      }
+    },
   },
 })
