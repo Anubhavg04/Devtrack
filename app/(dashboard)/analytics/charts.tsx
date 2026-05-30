@@ -43,7 +43,7 @@ export function Last7DaysChart({ data }: { data: DayStat[] }) {
             cursor={false}
             contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
             itemStyle={{ color: 'var(--foreground)', fontWeight: 'bold' }}
-            formatter={(value: number) => {
+            formatter={(value: any) => {
               const h = Math.floor(value / 60)
               const m = value % 60
               return [h > 0 ? `${h}h ${m}m` : `${m}m`, 'Focus Time']
@@ -109,7 +109,7 @@ export function TopicsPieChart({ data }: { data: TopicStat[] }) {
           <Tooltip 
             contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
             itemStyle={{ color: 'var(--foreground)', fontWeight: 'bold' }}
-            formatter={(value: number) => {
+            formatter={(value: any) => {
               const h = Math.floor(value / 60)
               const m = value % 60
               return [h > 0 ? `${h}h ${m}m` : `${m}m`, 'Studied']
