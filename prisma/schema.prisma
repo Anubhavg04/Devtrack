@@ -58,6 +58,7 @@ model Topic {
 model Goal {
   id        String   @id @default(uuid())
   title     String
+  status    String   @default("todo")
   completed Boolean  @default(false)
   createdAt DateTime @default(now())
   userId    String

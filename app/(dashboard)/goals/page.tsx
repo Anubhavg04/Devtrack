@@ -79,7 +79,7 @@ import { unstable_cache } from "next/cache"
 import { getUserId } from "@/lib/getUser"
 import { addGoal } from "./actions"
 import { prisma } from "@/lib/prisma"
-import { GoalsList } from "./goals-list"
+import { KanbanBoard } from "./kanban-board"
 import { SubmitButton } from "@/components/submitbutton"
 
 const getGoals = (userId: string) =>
@@ -91,6 +91,7 @@ const getGoals = (userId: string) =>
         select: {
           id: true,
           title: true,
+          status: true,
           completed: true,
         },
       })
@@ -139,7 +140,7 @@ export default async function GoalsPage() {
           </p>
         </div>
       ) : (
-        <GoalsList goals={goals} />
+        <KanbanBoard goals={goals} />
       )}
     </div>
   )

@@ -14,6 +14,7 @@ const navItems = [
   { href: "/goals", label: "Goals" },
   { href: "/analytics", label: "Analytics" },
   { href: "/leaderboard", label: "Leaderboard" },
+  { href: "/feed", label: "Live Feed" },
   { href: "/share", label: "Share Profile" },
   { href: "/settings", label: "Settings" },
 ]

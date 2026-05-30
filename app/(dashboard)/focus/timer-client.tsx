@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Play, Pause, Square, SkipForward, Code2, Flame, RotateCcw, ArrowRightLeft } from "lucide-react"
+import { Play, Pause, Square, SkipForward, Code2, Flame, RotateCcw, ArrowRightLeft, Volume2, VolumeX, CloudRain } from "lucide-react"
 import { logSession } from "../topics/actions"
 
 interface Topic {
@@ -31,9 +31,24 @@ export function FocusTimer({ topics, stats: initialStats }: { topics: Topic[], s
   const [stats, setStats] = useState(initialStats)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   
+  // Sound Settings
+  const [soundEnabled, setSoundEnabled] = useState(true)
+  const [ambienceEnabled, setAmbienceEnabled] = useState(false)
+
   const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const dingAudioRef = useRef<HTMLAudioElement | null>(null)
+  const rainAudioRef = useRef<HTMLAudioElement | null>(null)
 
   const currentTopic = topics.find(t => t.id === topicId)
+
+  // Handle Ambience playback
+  useEffect(() => {
+    if (ambienceEnabled && isActive && phase === "focus") {
+      rainAudioRef.current?.play().catch(() => {})
+    } else {
+      rainAudioRef.current?.pause()
+    }
+  }, [isActive, phase, ambienceEnabled])
 
   useEffect(() => {
     if (isActive && timeLeft > 0) {
@@ -73,6 +88,11 @@ export function FocusTimer({ topics, stats: initialStats }: { topics: Topic[], s
   }
 
   const handleComplete = async () => {
+    // Play Ding sound
+    if (soundEnabled) {
+      dingAudioRef.current?.play().catch(() => {})
+    }
+
     if (phase === "focus") {
       if (!topicId) return
       try {
@@ -136,45 +156,68 @@ export function FocusTimer({ topics, stats: initialStats }: { topics: Topic[], s
 
   return (
     <div className="flex flex-col gap-3 w-full max-w-2xl text-foreground">
-      
-      {/* Top Topic Card */}
-      <div className="relative border border-border bg-card/40 rounded-2xl p-3 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-            <Code2 size={20} strokeWidth={1.5} />
-          </div>
-          <div>
-            <div className="font-semibold text-base">{currentTopic?.title || "Select Topic"}</div>
-            <div className="text-sm text-muted-foreground">
-              {formatHrsMins((currentTopic?.todayMinutes || 0) + (phase === "focus" && isActive ? Math.floor((PHASES.focus.minutes * 60 - timeLeft) / 60) : 0))} studied today
+      {/* Audio Elements */}
+      <audio ref={dingAudioRef} src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" />
+      <audio ref={rainAudioRef} src="https://actions.google.com/sounds/v1/water/rain_on_roof.ogg" loop />
+
+      {/* Top Controls: Sound Toggles & Topic Selector */}
+      <div className="flex items-center gap-3 w-full">
+        <div className="relative flex-1 border border-border bg-card/40 rounded-2xl p-3 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+              <Code2 size={20} strokeWidth={1.5} />
+            </div>
+            <div>
+              <div className="font-semibold text-base">{currentTopic?.title || "Select Topic"}</div>
+              <div className="text-sm text-muted-foreground">
+                {formatHrsMins((currentTopic?.todayMinutes || 0) + (phase === "focus" && isActive ? Math.floor((PHASES.focus.minutes * 60 - timeLeft) / 60) : 0))} studied today
+              </div>
             </div>
           </div>
-        </div>
-        
-        <button 
-          onClick={() => !isActive && setIsDropdownOpen(!isDropdownOpen)}
-          disabled={isActive}
-          className="p-2 hover:bg-accent rounded-lg text-muted-foreground transition-colors disabled:opacity-50"
-        >
-          <ArrowRightLeft size={18} />
-        </button>
+          
+          <button 
+            onClick={() => !isActive && setIsDropdownOpen(!isDropdownOpen)}
+            disabled={isActive}
+            className="p-2 hover:bg-accent rounded-lg text-muted-foreground transition-colors disabled:opacity-50"
+          >
+            <ArrowRightLeft size={18} />
+          </button>
 
-        {isDropdownOpen && !isActive && (
-          <div className="absolute top-full right-0 mt-2 w-56 bg-background border border-border rounded-xl shadow-2xl py-1 z-50 animate-in fade-in slide-in-from-top-2">
-            {topics.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => {
-                  setTopicId(t.id)
-                  setIsDropdownOpen(false)
-                }}
-                className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-muted ${topicId === t.id ? 'text-primary font-medium bg-primary/5' : ''}`}
-              >
-                {t.title}
-              </button>
-            ))}
-          </div>
-        )}
+          {isDropdownOpen && !isActive && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-background border border-border rounded-xl shadow-2xl py-1 z-50 animate-in fade-in slide-in-from-top-2">
+              {topics.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => {
+                    setTopicId(t.id)
+                    setIsDropdownOpen(false)
+                  }}
+                  className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-muted ${topicId === t.id ? 'text-primary font-medium bg-primary/5' : ''}`}
+                >
+                  {t.title}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Sound Toggles */}
+        <div className="flex bg-card/40 border border-border rounded-2xl p-2 items-center gap-1 shadow-sm h-[66px]">
+          <button
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            className={`p-2.5 rounded-xl transition-all ${soundEnabled ? 'bg-primary/10 text-primary' : 'hover:bg-accent text-muted-foreground'}`}
+            title="Toggle Ding Sound"
+          >
+            {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+          </button>
+          <button
+            onClick={() => setAmbienceEnabled(!ambienceEnabled)}
+            className={`p-2.5 rounded-xl transition-all ${ambienceEnabled ? 'bg-blue-500/10 text-blue-500' : 'hover:bg-accent text-muted-foreground'}`}
+            title="Toggle Rain Ambience (Plays while focusing)"
+          >
+            <CloudRain size={18} />
+          </button>
+        </div>
       </div>
 
       {/* Main Timer Card */}

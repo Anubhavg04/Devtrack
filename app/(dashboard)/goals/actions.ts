@@ -40,7 +40,18 @@ export async function toggleGoal(goalId: string, completed: boolean) {
 
   await prisma.goal.update({
     where: { id: goalId, userId: user.id },
-    data: { completed },
+    data: { completed, status: completed ? "done" : "todo" },
+  })
+
+  invalidateAll()
+}
+
+export async function updateGoalStatus(goalId: string, status: string) {
+  const user = await getUser()
+
+  await prisma.goal.update({
+    where: { id: goalId, userId: user.id },
+    data: { status, completed: status === "done" },
   })
 
   invalidateAll()
