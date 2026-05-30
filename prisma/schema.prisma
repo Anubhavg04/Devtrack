@@ -3,38 +3,39 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id        String    @id @default(uuid())
-  email     String    @unique
-  name      String?
-  displayName  String?
-  bio       String?
-  image     String?
-  avatar    String?
-  username  String?   @unique
-  createdAt DateTime  @default(now())
-
-  topics    Topic[]
-  goals     Goal[]
-  sessions  Session[]
+  id            String         @id @default(uuid())
+  email         String         @unique
+  name          String?
+  image         String?
+  createdAt     DateTime       @default(now())
+  username      String?        @unique
+  avatar        String?
+  displayName   String?
+  bio           String?
+  emailVerified DateTime?
+  accounts      Account[]
+  GithubAccount GithubAccount?
+  goals         Goal[]
+  sessions      Session[]
+  topics        Topic[]
+  TrackedRepo   TrackedRepo[]
 }
 
 model Session {
-  id        String   @id @default(uuid())
-  minutes   Int
-  note      String?
-  date      DateTime @default(now())
-
-  topicId   String
-  topic     Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
-
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id      String   @id @default(uuid())
+  minutes Int
+  note    String?
+  date    DateTime @default(now())
+  topicId String
+  userId  String
+  topic   Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, date])
   @@index([userId, topicId])
@@ -46,10 +47,9 @@ model Topic {
   description String?
   status      String    @default("active")
   createdAt   DateTime  @default(now())
-
   userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   sessions    Session[]
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
 }
@@ -59,9 +59,98 @@ model Goal {
   title     String
   completed Boolean  @default(false)
   createdAt DateTime @default(now())
-
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, completed, createdAt])
 }
+
+model GithubAccount {
+  id           String    @id
+  userId       String    @unique
+  githubUserId String
+  login        String
+  accessToken  String
+  scope        String?
+  connectedAt  DateTime  @default(now())
+  lastSyncedAt DateTime?
+  User         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([githubUserId])
+}
+
+model RepoSnapshot {
+  id                String      @id
+  trackedRepoId     String
+  snapshotDate      DateTime
+  commitCount7d     Int         @default(0)
+  prOpened7d        Int         @default(0)
+  prMerged7d        Int         @default(0)
+  issuesOpened7d    Int         @default(0)
+  contributorsCount Int         @default(0)
+  activeDays7d      Int         @default(0)
+  createdAt         DateTime    @default(now())
+  TrackedRepo       TrackedRepo @relation(fields: [trackedRepoId], references: [id], onDelete: Cascade)
+
+  @@unique([trackedRepoId, snapshotDate])
+  @@index([snapshotDate])
+}
+
+model TrackedRepo {
+  id             String         @id
+  userId         String
+  githubRepoId   String
+  owner          String
+  name           String
+  fullName       String
+  isPrivate      Boolean        @default(false)
+  defaultBranch  String?
+  url            String
+  status         RepoStatus     @default(planned)
+  startedAt      DateTime?
+  completedAt    DateTime?
+  archivedAt     DateTime?
+  lastActivityAt DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime
+  RepoSnapshot   RepoSnapshot[]
+  User           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, fullName])
+  @@unique([userId, githubRepoId])
+  @@index([userId, status, updatedAt])
+}
+
+enum RepoStatus {
+  planned
+  in_progress
+  completed
+}
+
+model Account {
+  id                 String  @id @default(uuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
