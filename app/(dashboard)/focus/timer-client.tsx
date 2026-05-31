@@ -36,19 +36,91 @@ export function FocusTimer({ topics, stats: initialStats }: { topics: Topic[], s
   const [ambienceEnabled, setAmbienceEnabled] = useState(false)
 
   const timerRef = useRef<NodeJS.Timeout | null>(null)
-  const dingAudioRef = useRef<HTMLAudioElement | null>(null)
-  const rainAudioRef = useRef<HTMLAudioElement | null>(null)
+  const audioCtxRef = useRef<any>(null)
+  const rainSourceRef = useRef<any>(null)
+
+  const playDing = () => {
+    if (!soundEnabled) return
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext
+    if (!audioCtxRef.current) audioCtxRef.current = new AudioContextClass()
+    const ctx = audioCtxRef.current
+    if (ctx.state === 'suspended') ctx.resume()
+
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+    osc.type = "sine"
+    osc.frequency.setValueAtTime(800, ctx.currentTime)
+    gain.gain.setValueAtTime(0.5, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1)
+    osc.start(ctx.currentTime)
+    osc.stop(ctx.currentTime + 1)
+  }
+
+  const toggleRain = (play: boolean) => {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext
+    if (!AudioContextClass) return
+
+    if (play && ambienceEnabled) {
+      if (rainSourceRef.current) return // Already playing
+      if (!audioCtxRef.current) audioCtxRef.current = new AudioContextClass()
+      const ctx = audioCtxRef.current
+      if (ctx.state === 'suspended') ctx.resume()
+
+      const bufferSize = ctx.sampleRate * 2
+      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
+      const output = noiseBuffer.getChannelData(0)
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1
+      }
+      
+      const whiteNoise = ctx.createBufferSource()
+      whiteNoise.buffer = noiseBuffer
+      whiteNoise.loop = true
+
+      const filter = ctx.createBiquadFilter()
+      filter.type = "lowpass"
+      filter.frequency.value = 400 // Deep rumble like rain
+
+      const gain = ctx.createGain()
+      gain.gain.value = 0.5
+
+      whiteNoise.connect(filter)
+      filter.connect(gain)
+      gain.connect(ctx.destination)
+
+      whiteNoise.start()
+      rainSourceRef.current = whiteNoise
+    } else {
+      if (rainSourceRef.current) {
+        try { rainSourceRef.current.stop() } catch (e) {}
+        rainSourceRef.current.disconnect()
+        rainSourceRef.current = null
+      }
+    }
+  }
 
   const currentTopic = topics.find(t => t.id === topicId)
 
   // Handle Ambience playback
   useEffect(() => {
-    if (ambienceEnabled && isActive && phase === "focus") {
-      rainAudioRef.current?.play().catch(() => {})
+    if (isActive && phase === "focus") {
+      toggleRain(true)
     } else {
-      rainAudioRef.current?.pause()
+      toggleRain(false)
     }
   }, [isActive, phase, ambienceEnabled])
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      if (rainSourceRef.current) {
+        try { rainSourceRef.current.stop() } catch (e) {}
+        rainSourceRef.current.disconnect()
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (isActive && timeLeft > 0) {
@@ -89,9 +161,7 @@ export function FocusTimer({ topics, stats: initialStats }: { topics: Topic[], s
 
   const handleComplete = async () => {
     // Play Ding sound
-    if (soundEnabled) {
-      dingAudioRef.current?.play().catch(() => {})
-    }
+    playDing()
 
     if (phase === "focus") {
       if (!topicId) return
@@ -156,9 +226,7 @@ export function FocusTimer({ topics, stats: initialStats }: { topics: Topic[], s
 
   return (
     <div className="flex flex-col gap-3 w-full max-w-2xl text-foreground">
-      {/* Audio Elements */}
-      <audio ref={dingAudioRef} src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" />
-      <audio ref={rainAudioRef} src="https://actions.google.com/sounds/v1/water/rain_on_roof.ogg" loop />
+      {/* Audio Elements Removed in favor of Web Audio API */}
 
       {/* Top Controls: Sound Toggles & Topic Selector */}
       <div className="flex items-center gap-3 w-full">
