@@ -184,6 +184,7 @@ export function FocusTimer({ topics, stats: initialStats }: { topics: Topic[], s
     <div className="flex flex-col gap-3 w-full max-w-2xl text-foreground">
       {/* Hidden YouTube Player for Ambience */}
       <div className="hidden">
+        {/* @ts-ignore - react-player types are not fully compatible with React 19 yet */}
         <ReactPlayer
           url={selectedSound.url}
           playing={shouldPlayAmbience}
