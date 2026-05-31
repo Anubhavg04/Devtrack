@@ -1,9 +1,8 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Play, Pause, Square, SkipForward, Code2, Flame, RotateCcw, ArrowRightLeft, Volume2, VolumeX, Music } from "lucide-react"
+import { Play, Pause, Square, SkipForward, Code2, Flame, RotateCcw, ArrowRightLeft, Volume2, VolumeX } from "lucide-react"
 import { logSession } from "../topics/actions"
-import ReactPlayer from "react-player"
 
 interface Topic {
   id: string
@@ -23,18 +22,7 @@ const PHASES = {
   longBreak: { label: "Long break", minutes: 15 },
 }
 
-const SOUND_OPTIONS = [
-  { id: "lofi", label: "Lofi Chillhop", url: "https://www.youtube.com/watch?v=jfKfPfyJRdk" },
-  { id: "piano", label: "Classical Piano", url: "https://www.youtube.com/watch?v=mIYzpCGx1JI" },
-  { id: "motivation", label: "Motivational Speech", url: "https://www.youtube.com/watch?v=wnHW6o8WMas" },
-  { id: "rain", label: "Heavy Rain", url: "https://www.youtube.com/watch?v=mPZkdNFkNps" },
-  { id: "jazz", label: "Coffee Shop Jazz", url: "https://www.youtube.com/watch?v=e3OpmAebYRw" },
-  { id: "synth", label: "Synthwave", url: "https://www.youtube.com/watch?v=4xDzrUhVKVA" },
-  { id: "brown", label: "Deep Focus Noise", url: "https://www.youtube.com/watch?v=hXrtQcWEptI" },
-  { id: "epic", label: "Epic Cinematic", url: "https://www.youtube.com/watch?v=4q9UafAMwgI" },
-  { id: "ocean", label: "Ocean Waves", url: "https://www.youtube.com/watch?v=bn9F19Hi1Lk" },
-  { id: "forest", label: "Forest Birds", url: "https://www.youtube.com/watch?v=eKFTSSKCzWA" }
-]
+
 
 export function FocusTimer({ topics, stats: initialStats }: { topics: Topic[], stats: Stats }) {
   const [topicId, setTopicId] = useState(topics[0]?.id || "")
@@ -47,9 +35,6 @@ export function FocusTimer({ topics, stats: initialStats }: { topics: Topic[], s
   
   // Sound Settings
   const [soundEnabled, setSoundEnabled] = useState(true)
-  const [ambienceEnabled, setAmbienceEnabled] = useState(false)
-  const [selectedSoundId, setSelectedSoundId] = useState(SOUND_OPTIONS[0].id)
-  const [isSoundMenuOpen, setIsSoundMenuOpen] = useState(false)
 
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const audioCtxRef = useRef<any>(null)
@@ -73,8 +58,7 @@ export function FocusTimer({ topics, stats: initialStats }: { topics: Topic[], s
     osc.stop(ctx.currentTime + 1)
   }
 
-  const selectedSound = SOUND_OPTIONS.find(s => s.id === selectedSoundId) || SOUND_OPTIONS[0]
-  const shouldPlayAmbience = ambienceEnabled && isActive && phase === "focus"
+
 
   const currentTopic = topics.find(t => t.id === topicId)
 
@@ -182,23 +166,6 @@ export function FocusTimer({ topics, stats: initialStats }: { topics: Topic[], s
 
   return (
     <div className="flex flex-col gap-3 w-full max-w-2xl text-foreground">
-      {/* Hidden YouTube Player for Ambience */}
-      <div className="fixed top-[-9999px] left-[-9999px] w-[10px] h-[10px] opacity-0 pointer-events-none">
-        {(() => {
-          const Player = ReactPlayer as any;
-          return (
-            <Player
-              url={selectedSound.url}
-              playing={shouldPlayAmbience}
-              loop={true}
-              volume={0.5}
-              width="0"
-              height="0"
-            />
-          );
-        })()}
-      </div>
-
       {/* Top Controls: Sound Toggles & Topic Selector */}
       <div className="relative flex items-center gap-3 w-full z-50">
         <div className="relative flex-1 border border-border bg-card/40 rounded-2xl p-3 flex items-center justify-between shadow-sm">
@@ -245,45 +212,10 @@ export function FocusTimer({ topics, stats: initialStats }: { topics: Topic[], s
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
             className={`p-2.5 rounded-xl transition-all ${soundEnabled ? 'bg-primary/10 text-primary' : 'hover:bg-accent text-muted-foreground'}`}
-            title="Toggle Ding Sound"
+            title="Toggle Session Completion Sound"
           >
             {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
           </button>
-          <button
-            onClick={() => setAmbienceEnabled(!ambienceEnabled)}
-            className={`p-2.5 rounded-xl transition-all ${ambienceEnabled ? 'bg-blue-500/10 text-blue-500' : 'hover:bg-accent text-muted-foreground'}`}
-            title="Toggle Background Ambience (Plays while focusing)"
-          >
-            <Music size={18} />
-          </button>
-
-          <button
-            onClick={() => !isActive && setIsSoundMenuOpen(!isSoundMenuOpen)}
-            disabled={isActive}
-            className="p-2 ml-1 hover:bg-accent rounded-lg text-muted-foreground transition-colors disabled:opacity-50"
-          >
-            <ArrowRightLeft size={14} />
-          </button>
-
-          {isSoundMenuOpen && !isActive && (
-            <div className="absolute top-full right-0 mt-2 w-48 bg-background border border-border rounded-xl shadow-2xl py-1 z-50 animate-in fade-in slide-in-from-top-2">
-              <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border mb-1">
-                Background Sound
-              </div>
-              {SOUND_OPTIONS.map((sound) => (
-                <button
-                  key={sound.id}
-                  onClick={() => {
-                    setSelectedSoundId(sound.id)
-                    setIsSoundMenuOpen(false)
-                  }}
-                  className={`w-full text-left px-4 py-2 text-sm transition-colors hover:bg-muted ${selectedSoundId === sound.id ? 'text-blue-500 font-medium bg-blue-500/5' : ''}`}
-                >
-                  {sound.label}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
       </div>
 
