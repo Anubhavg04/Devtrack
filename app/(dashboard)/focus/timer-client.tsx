@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Play, Pause, Square, SkipForward, Code2, Flame, RotateCcw, ArrowRightLeft, Volume2, VolumeX } from "lucide-react"
+import { Play, Pause, Square, SkipForward, Code2, Flame, RotateCcw, ArrowRightLeft, Volume2, VolumeX, Music } from "lucide-react"
 import { logSession } from "../topics/actions"
 
 interface Topic {
@@ -22,7 +22,13 @@ const PHASES = {
   longBreak: { label: "Long break", minutes: 15 },
 }
 
-
+const SOUND_OPTIONS = [
+  { id: "lofi", label: "Lofi Chillhop", url: "/sounds/lofi.mp3" },
+  { id: "piano", label: "Classical Piano", url: "/sounds/piano.mp3" },
+  { id: "rain", label: "Heavy Rain", url: "/sounds/rain.mp3" },
+  { id: "brown", label: "Deep Focus Noise", url: "/sounds/brown.mp3" },
+  { id: "epic", label: "Epic Cinematic", url: "/sounds/epic.mp3" }
+]
 
 export function FocusTimer({ topics, stats: initialStats }: { topics: Topic[], stats: Stats }) {
   const [topicId, setTopicId] = useState(topics[0]?.id || "")
@@ -35,9 +41,13 @@ export function FocusTimer({ topics, stats: initialStats }: { topics: Topic[], s
   
   // Sound Settings
   const [soundEnabled, setSoundEnabled] = useState(true)
+  const [ambienceEnabled, setAmbienceEnabled] = useState(false)
+  const [selectedSoundId, setSelectedSoundId] = useState(SOUND_OPTIONS[0].id)
+  const [isSoundMenuOpen, setIsSoundMenuOpen] = useState(false)
 
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const audioCtxRef = useRef<any>(null)
+  const bgAudioRef = useRef<HTMLAudioElement | null>(null)
 
   const playDing = () => {
     if (!soundEnabled) return
@@ -56,9 +66,10 @@ export function FocusTimer({ topics, stats: initialStats }: { topics: Topic[], s
     gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1)
     osc.start(ctx.currentTime)
     osc.stop(ctx.currentTime + 1)
+    osc.stop(ctx.currentTime + 1)
   }
 
-
+  const selectedSound = SOUND_OPTIONS.find(s => s.id === selectedSoundId) || SOUND_OPTIONS[0]
 
   const currentTopic = topics.find(t => t.id === topicId)
 
@@ -79,17 +90,29 @@ export function FocusTimer({ topics, stats: initialStats }: { topics: Topic[], s
 
   const toggleTimer = () => {
     if (timeLeft === 0) return
-    setIsActive(!isActive)
+    const nextIsActive = !isActive
+    setIsActive(nextIsActive)
+
+    // Synchronous audio playback required for mobile browsers
+    if (bgAudioRef.current) {
+      if (nextIsActive && phase === "focus" && ambienceEnabled) {
+        bgAudioRef.current.play().catch(e => console.error(e))
+      } else {
+        bgAudioRef.current.pause()
+      }
+    }
   }
 
   const resetTimer = () => {
     setIsActive(false)
     setTimeLeft(PHASES[phase].minutes * 60)
+    bgAudioRef.current?.pause()
   }
 
   const skipTimer = () => {
     setIsActive(false)
     setTimeLeft(0)
+    bgAudioRef.current?.pause()
     handleComplete()
   }
 
@@ -97,6 +120,7 @@ export function FocusTimer({ topics, stats: initialStats }: { topics: Topic[], s
     setIsActive(false)
     setPhase(newPhase)
     setTimeLeft(PHASES[newPhase].minutes * 60)
+    bgAudioRef.current?.pause()
   }
 
   const handleComplete = async () => {
@@ -164,8 +188,41 @@ export function FocusTimer({ topics, stats: initialStats }: { topics: Topic[], s
 
   const sessionsUntilLongBreak = 4 - pomodorosCompleted
 
+  const toggleAmbience = () => {
+    const nextEnabled = !ambienceEnabled
+    setAmbienceEnabled(nextEnabled)
+    if (bgAudioRef.current && isActive && phase === "focus") {
+      if (nextEnabled) {
+        bgAudioRef.current.play().catch(e => console.error(e))
+      } else {
+        bgAudioRef.current.pause()
+      }
+    }
+  }
+
+  const changeSound = (id: string) => {
+    setSelectedSoundId(id)
+    setIsSoundMenuOpen(false)
+    
+    // Slight timeout allows the react state to update the <audio src> before playing
+    setTimeout(() => {
+      if (bgAudioRef.current && isActive && phase === "focus" && ambienceEnabled) {
+        bgAudioRef.current.play().catch(e => console.error(e))
+      }
+    }, 50)
+  }
+
   return (
     <div className="flex flex-col gap-3 w-full max-w-2xl text-foreground">
+      {/* Native Background Audio Player */}
+      <audio 
+        ref={bgAudioRef} 
+        src={selectedSound.url} 
+        loop 
+        preload="auto" 
+        className="hidden" 
+      />
+
       {/* Top Controls: Sound Toggles & Topic Selector */}
       <div className="relative flex items-center gap-3 w-full z-50">
         <div className="relative flex-1 border border-border bg-card/40 rounded-2xl p-3 flex items-center justify-between shadow-sm">
@@ -207,8 +264,6 @@ export function FocusTimer({ topics, stats: initialStats }: { topics: Topic[], s
           )}
         </div>
 
-        {/* Sound Toggles */}
-        <div className="relative flex bg-card/40 border border-border rounded-2xl p-2 items-center gap-1 shadow-sm h-[66px]">
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
             className={`p-2.5 rounded-xl transition-all ${soundEnabled ? 'bg-primary/10 text-primary' : 'hover:bg-accent text-muted-foreground'}`}
@@ -216,6 +271,39 @@ export function FocusTimer({ topics, stats: initialStats }: { topics: Topic[], s
           >
             {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
           </button>
+          
+          <button
+            onClick={toggleAmbience}
+            className={`p-2.5 rounded-xl transition-all ${ambienceEnabled ? 'bg-blue-500/10 text-blue-500' : 'hover:bg-accent text-muted-foreground'}`}
+            title="Toggle Background Ambience (Plays while focusing)"
+          >
+            <Music size={18} />
+          </button>
+
+          <button
+            onClick={() => !isActive && setIsSoundMenuOpen(!isSoundMenuOpen)}
+            disabled={isActive}
+            className="p-2 ml-1 hover:bg-accent rounded-lg text-muted-foreground transition-colors disabled:opacity-50"
+          >
+            <ArrowRightLeft size={14} />
+          </button>
+
+          {isSoundMenuOpen && !isActive && (
+            <div className="absolute top-full right-0 mt-2 w-48 bg-background border border-border rounded-xl shadow-2xl py-1 z-50 animate-in fade-in slide-in-from-top-2">
+              <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border mb-1">
+                Background Sound
+              </div>
+              {SOUND_OPTIONS.map((sound) => (
+                <button
+                  key={sound.id}
+                  onClick={() => changeSound(sound.id)}
+                  className={`w-full text-left px-4 py-2 text-sm transition-colors hover:bg-muted ${selectedSoundId === sound.id ? 'text-blue-500 font-medium bg-blue-500/5' : ''}`}
+                >
+                  {sound.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
