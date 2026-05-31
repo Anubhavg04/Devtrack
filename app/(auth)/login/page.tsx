@@ -1,10 +1,18 @@
 "use client"
 
-import { handleGoogleLogin } from "./action"
 import { BookOpen } from "lucide-react"
-import { useFormStatus } from "react-dom"
+import { signIn } from "next-auth/react"
+import { useState } from "react"
 
 export default function LoginPage() {
+  const [loading, setLoading] = useState(false)
+
+  const handleLogin = async () => {
+    setLoading(true)
+    // Use client-side signIn to bypass Safari form ITP/redirect bugs
+    await signIn("google", { callbackUrl: "/dashboard" })
+  }
+
   return (
     <main className="min-h-screen bg-background flex items-center justify-center px-4">
 
@@ -46,9 +54,22 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <form action={handleGoogleLogin}>
-            <LoginButton />
-          </form>
+          <button
+            onClick={handleLogin}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-border bg-background hover:bg-accent transition-colors text-sm font-medium disabled:opacity-50"
+          >
+            {loading ? (
+              <span className="font-mono text-xs text-muted-foreground">
+                redirecting...
+              </span>
+            ) : (
+              <>
+                <GoogleIcon />
+                Continue with Google
+              </>
+            )}
+          </button>
 
           <p className="text-center text-xs text-muted-foreground">
             By continuing you agree to our{" "}
@@ -67,29 +88,6 @@ export default function LoginPage() {
 
       </div>
     </main>
-  )
-}
-
-function LoginButton() {
-  const { pending } = useFormStatus()
-  
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-border bg-background hover:bg-accent transition-colors text-sm font-medium disabled:opacity-50"
-    >
-      {pending ? (
-        <span className="font-mono text-xs text-muted-foreground">
-          redirecting...
-        </span>
-      ) : (
-        <>
-          <GoogleIcon />
-          Continue with Google
-        </>
-      )}
-    </button>
   )
 }
 
