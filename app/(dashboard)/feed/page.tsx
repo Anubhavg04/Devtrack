@@ -57,8 +57,8 @@ export default async function FeedPage() {
               <div key={session.id} className="border border-border bg-card rounded-xl p-5 flex gap-4 transition-all hover:shadow-sm group">
                 <Link href={`/u/${session.user.username}`} className="flex-shrink-0">
                   <UserAvatar 
-                    avatarUrl={session.user.avatar} 
-                    username={session.user.username || "anonymous"} 
+                    avatar={session.user.avatar} 
+                    name={session.user.username || "anonymous"} 
                     className="w-12 h-12"
                   />
                 </Link>
