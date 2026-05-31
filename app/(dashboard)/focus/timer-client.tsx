@@ -183,7 +183,7 @@ export function FocusTimer({ topics, stats: initialStats }: { topics: Topic[], s
   return (
     <div className="flex flex-col gap-3 w-full max-w-2xl text-foreground">
       {/* Hidden YouTube Player for Ambience */}
-      <div className="hidden">
+      <div className="fixed top-[-9999px] left-[-9999px] w-[10px] h-[10px] opacity-0 pointer-events-none">
         {(() => {
           const Player = ReactPlayer as any;
           return (
@@ -200,7 +200,7 @@ export function FocusTimer({ topics, stats: initialStats }: { topics: Topic[], s
       </div>
 
       {/* Top Controls: Sound Toggles & Topic Selector */}
-      <div className="flex items-center gap-3 w-full">
+      <div className="relative flex items-center gap-3 w-full z-50">
         <div className="relative flex-1 border border-border bg-card/40 rounded-2xl p-3 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
