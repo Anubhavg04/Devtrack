@@ -1,4 +1,7 @@
+"use client"
+
 import Link from "next/link"
+import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { DemoPreview } from "@/components/demo-preview"
@@ -9,6 +12,7 @@ import {
   ArrowRight,
   Flame,
   Circle,
+  BarChart2
 } from "lucide-react"
 
 export default function HomePage() {
@@ -50,7 +54,12 @@ export default function HomePage() {
       <section className="relative z-10 max-w-6xl mx-auto px-6 pt-16 pb-16 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[85vh]">
 
         {/* Left */}
-        <div className="flex flex-col gap-8">
+        <motion.div 
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+          className="flex flex-col gap-8"
+        >
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-muted/50 text-xs text-muted-foreground font-mono w-fit">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
             Created for developers by a developer
@@ -99,10 +108,15 @@ export default function HomePage() {
               goal setting
             </span>
           </div>
-        </div>
+        </motion.div>
 
         {/* Right — browser mockup */}
-        <div className="relative hidden lg:flex items-center justify-center">
+        <motion.div 
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
+          className="relative hidden lg:flex items-center justify-center"
+        >
 
           {/* Glow behind mockup */}
           <div
@@ -141,7 +155,7 @@ export default function HomePage() {
                   <div className="w-3 h-3 rounded-sm bg-foreground/20" />
                   <span className="text-xs font-mono text-foreground">Dashboard</span>
                 </div>
-                {["Topics", "Goals"].map((item) => (
+                {["Focus Timer", "Topics", "Goals", "Analytics"].map((item) => (
                   <div key={item} className="px-2 py-1.5 rounded-md flex items-center gap-2">
                     <div className="w-3 h-3 rounded-sm bg-foreground/10" />
                     <span className="text-xs font-mono text-muted-foreground">{item}</span>
@@ -214,9 +228,15 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </section>
-      <section className="relative z-10 max-w-6xl mx-auto px-6 py-16">
+      <motion.section 
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.7 }}
+        className="relative z-10 max-w-6xl mx-auto px-6 py-16"
+      >
         <div className="text-center mb-10">
           <span className="font-mono text-xs text-muted-foreground uppercase tracking-widest">
             see it in action
@@ -229,7 +249,7 @@ export default function HomePage() {
           </p>
         </div>
         <DemoPreview />
-      </section>
+      </motion.section>
 
       {/* Divider */}
       <div className="max-w-6xl mx-auto px-6">
@@ -238,7 +258,12 @@ export default function HomePage() {
 
       {/* Features */}
       <section id="features" className="relative z-10 max-w-6xl mx-auto px-6 py-24">
-        <div className="mb-12">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mb-12"
+        >
           <span className="font-mono text-xs text-muted-foreground uppercase tracking-widest">
             features
           </span>
@@ -247,12 +272,16 @@ export default function HomePage() {
             <br />
             <span className="text-muted-foreground">Nothing they don't.</span>
           </h2>
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {features.map((f) => (
-            <div
+          {features.map((f, i) => (
+            <motion.div
               key={f.title}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.15 }}
               className="border border-border rounded-xl p-6 flex flex-col gap-4 bg-card hover:bg-accent transition-colors group"
             >
               <div className="w-9 h-9 rounded-lg border border-border flex items-center justify-center text-muted-foreground group-hover:text-foreground transition-colors">
@@ -267,7 +296,7 @@ export default function HomePage() {
                   {f.description}
                 </p>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </section>
@@ -279,7 +308,13 @@ export default function HomePage() {
 
       {/* CTA */}
       <section className="relative z-10 max-w-6xl mx-auto px-6 py-24">
-        <div className="border border-border rounded-xl p-12 flex flex-col items-center text-center gap-6 bg-card">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="border border-border rounded-xl p-12 flex flex-col items-center text-center gap-6 bg-card"
+        >
           <div className="w-10 h-10 rounded-xl border border-border flex items-center justify-center">
             <BookOpen size={18} className="text-muted-foreground" />
           </div>
@@ -298,7 +333,7 @@ export default function HomePage() {
               <ArrowRight size={14} />
             </Link>
           </Button>
-        </div>
+        </motion.div>
       </section>
 
       {/* Footer */}
@@ -318,24 +353,45 @@ export default function HomePage() {
 
 const features = [
   {
-    tag: "01 / track",
+    tag: "01 / focus",
+    title: "Pomodoro Timer & Ambience",
+    icon: Target,
+    description:
+      "Deep work made easy. Stay in the zone with built-in ambient sounds and automated Pomodoro cycles linked directly to your learning topics.",
+  },
+  {
+    tag: "02 / track",
     title: "Log every session",
     icon: BookOpen,
     description:
       "Add topics and log time per session. Watch hours accumulate. See exactly what you've invested in each skill.",
   },
   {
-    tag: "02 / visualize",
+    tag: "03 / visualize",
     title: "Activity heatmap",
     icon: GitCommit,
     description:
       "A full year grid like GitHub's contribution graph. Every square is a day you showed up and put in the work.",
   },
   {
-    tag: "03 / focus",
-    title: "Goals and streaks",
-    icon: Target,
+    tag: "04 / analytics",
+    title: "Developer Analytics",
+    icon: BarChart2,
     description:
-      "Set learning goals. Track streaks. The streak counter alone will make you open the app every single day.",
+      "Get a CLI-style breakdown of your learning trends, most active days, and topic distribution.",
+  },
+  {
+    tag: "05 / goals",
+    title: "Goals & Streaks",
+    icon: Flame,
+    description:
+      "Set learning goals and track consecutive active days. The streak counter alone will make you open the app every single day.",
+  },
+  {
+    tag: "06 / dark mode",
+    title: "Gorgeous UI & Themes",
+    icon: Circle,
+    description:
+      "A minimal, distraction-free interface carefully crafted for developers, with seamless dark mode support.",
   },
 ]

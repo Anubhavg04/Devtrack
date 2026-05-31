@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { BookOpen, Target, CheckCircle2, BarChart2, LayoutDashboard } from "lucide-react"
+import { BookOpen, Target, CheckCircle2, BarChart2, LayoutDashboard, Play, Flame, RotateCcw, SkipForward } from "lucide-react"
 import { format, subDays, startOfDay } from "date-fns"
 
 // Sample data — hardcoded, no database needed
@@ -41,13 +41,14 @@ function generateHeatmapData() {
 
 const heatmapData = generateHeatmapData()
 
-type Tab = "dashboard" | "topics" | "goals" | "analytics"
+type Tab = "dashboard" | "focus" | "topics" | "goals" | "analytics"
 
 export function DemoPreview() {
   const [activeTab, setActiveTab] = useState<Tab>("dashboard")
 
   const tabs = [
     { id: "dashboard" as Tab, label: "Dashboard", icon: LayoutDashboard },
+    { id: "focus" as Tab, label: "Focus Timer", icon: Play },
     { id: "topics" as Tab, label: "Topics", icon: BookOpen },
     { id: "goals" as Tab, label: "Goals", icon: Target },
     { id: "analytics" as Tab, label: "Analytics", icon: BarChart2 },
@@ -127,6 +128,7 @@ export function DemoPreview() {
           {/* Main content */}
           <div className="flex-1 overflow-auto bg-background">
             {activeTab === "dashboard" && <DemoDashboard />}
+            {activeTab === "focus" && <DemoFocus />}
             {activeTab === "topics" && <DemoTopics />}
             {activeTab === "goals" && <DemoGoals />}
             {activeTab === "analytics" && <DemoAnalytics />}
@@ -288,6 +290,37 @@ function DemoDashboard() {
 
       </div>
     </>
+  )
+}
+
+// Focus tab
+function DemoFocus() {
+  return (
+    <div className="p-5 flex flex-col gap-4 items-center justify-center h-full">
+      <div className="w-full max-w-sm border border-border bg-card/30 rounded-2xl p-6 flex flex-col items-center shadow-sm">
+        <div className="flex bg-background border border-border rounded-full p-1 mb-5 shadow-sm">
+          <button className="px-4 py-1.5 rounded-full text-xs font-medium bg-primary/10 text-primary shadow-sm">Focus</button>
+          <button className="px-4 py-1.5 rounded-full text-xs font-medium text-muted-foreground">Short break</button>
+          <button className="px-4 py-1.5 rounded-full text-xs font-medium text-muted-foreground">Long break</button>
+        </div>
+        <div className="text-[4rem] leading-none font-medium tracking-tight tabular-nums mb-5 text-foreground drop-shadow-sm">
+          25:00
+        </div>
+        <div className="w-full mb-3">
+          <div className="h-1 bg-border rounded-full overflow-hidden">
+            <div className="h-full bg-primary w-[0%]" />
+          </div>
+        </div>
+        <div className="text-xs text-muted-foreground font-medium">
+          Session 1 of 4 · 4 sessions until long break
+        </div>
+      </div>
+      <div className="flex items-center justify-center gap-3">
+        <button className="w-10 h-10 flex items-center justify-center rounded-xl border border-border bg-card text-muted-foreground shadow-sm"><RotateCcw size={16} /></button>
+        <button className="px-8 h-10 flex items-center justify-center gap-2 rounded-xl text-primary-foreground font-medium bg-primary shadow-md"><Play size={16} className="fill-current translate-x-0.5" />Start</button>
+        <button className="w-10 h-10 flex items-center justify-center rounded-xl border border-border bg-card text-muted-foreground shadow-sm"><SkipForward size={16} /></button>
+      </div>
+    </div>
   )
 }
 
