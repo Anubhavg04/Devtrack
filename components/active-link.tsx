@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, BookOpen, Target, BarChart2, Settings, Share2, Timer, Trophy } from "lucide-react"
+import { LayoutDashboard, BookOpen, Target, BarChart2, Settings, Share2, Timer, Trophy, Activity } from "lucide-react"
 
 const icons = {
   "/dashboard": LayoutDashboard,
@@ -11,6 +11,7 @@ const icons = {
   "/goals": Target,
   "/analytics": BarChart2,
   "/leaderboard": Trophy,
+  "/feed": Activity,
   "/share": Share2,
   "/settings": Settings,
 } as const

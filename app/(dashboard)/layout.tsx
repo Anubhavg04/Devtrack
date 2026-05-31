@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button"
 import { signOut } from "@/auth"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { BookOpen, LogOut } from "lucide-react"
-import { ActiveLink, MobileNavLink } from "@/components/active-link"
+import { ActiveLink } from "@/components/active-link"
+import { MobileNav } from "@/components/mobile-nav"
 import { getCurrentUser } from "@/lib/getUser"
 import { UserAvatar } from "@/components/user-avatar"
 
@@ -90,24 +91,7 @@ export default async function DashboardLayout({
 
       </aside>
 
-      {/* Mobile top bar */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-40 border-b border-border bg-sidebar flex items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-2">
-          <BookOpen size={15} className="text-muted-foreground" />
-          <span className="font-mono font-semibold text-sm tracking-tight">
-            dev<span className="text-muted-foreground">track</span>
-          </span>
-        </div>
-        <div className="flex items-center gap-3">
-          <UserAvatar 
-            avatar={user.avatar} 
-            name={user.username || user.name} 
-            image={user.image} 
-            size={28} 
-          />
-          <ThemeToggle />
-        </div>
-      </header>
+      <MobileNav user={user} />
 
       {/* Main content */}
       <main className="md:ml-60 pb-20 md:pb-0">
@@ -115,34 +99,6 @@ export default async function DashboardLayout({
           {children}
         </div>
       </main>
-
-      {/* Mobile bottom nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-sidebar">
-        <div className="flex items-center">
-          {navItems.map((item) => (
-            <MobileNavLink
-              key={item.href}
-              href={item.href}
-              label={item.label}
-            />
-          ))}
-          <form
-            className="flex-1"
-            action={async () => {
-              "use server"
-              await signOut({ redirectTo: "/" })
-            }}
-          >
-            <button
-              type="submit"
-              className="w-full flex flex-col items-center gap-1 py-3 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <LogOut size={18} />
-              <span className="text-xs font-mono">out</span>
-            </button>
-          </form>
-        </div>
-      </nav>
 
     </div>
   )
