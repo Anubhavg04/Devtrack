@@ -184,15 +184,19 @@ export function FocusTimer({ topics, stats: initialStats }: { topics: Topic[], s
     <div className="flex flex-col gap-3 w-full max-w-2xl text-foreground">
       {/* Hidden YouTube Player for Ambience */}
       <div className="hidden">
-        {/* @ts-ignore - react-player types are not fully compatible with React 19 yet */}
-        <ReactPlayer
-          url={selectedSound.url}
-          playing={shouldPlayAmbience}
-          loop={true}
-          volume={0.5}
-          width="0"
-          height="0"
-        />
+        {(() => {
+          const Player = ReactPlayer as any;
+          return (
+            <Player
+              url={selectedSound.url}
+              playing={shouldPlayAmbience}
+              loop={true}
+              volume={0.5}
+              width="0"
+              height="0"
+            />
+          );
+        })()}
       </div>
 
       {/* Top Controls: Sound Toggles & Topic Selector */}
