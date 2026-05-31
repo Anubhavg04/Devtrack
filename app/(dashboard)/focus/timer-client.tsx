@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { Play, Pause, Square, SkipForward, Code2, Flame, RotateCcw, ArrowRightLeft, Volume2, VolumeX, Music } from "lucide-react"
 import { logSession } from "../topics/actions"
-import ReactPlayer from "react-player/youtube"
+import ReactPlayer from "react-player"
 
 interface Topic {
   id: string
