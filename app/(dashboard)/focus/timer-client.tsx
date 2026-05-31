@@ -264,6 +264,8 @@ export function FocusTimer({ topics, stats: initialStats }: { topics: Topic[], s
           )}
         </div>
 
+        {/* Sound Toggles */}
+        <div className="relative flex bg-card/40 border border-border rounded-2xl p-2 items-center gap-1 shadow-sm h-[66px]">
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
             className={`p-2.5 rounded-xl transition-all ${soundEnabled ? 'bg-primary/10 text-primary' : 'hover:bg-accent text-muted-foreground'}`}
