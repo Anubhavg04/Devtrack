@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { BookOpen, Target, CheckCircle2, BarChart2, LayoutDashboard, Play, Flame, RotateCcw, SkipForward } from "lucide-react"
 import { format, subDays, startOfDay } from "date-fns"
 
@@ -45,6 +45,12 @@ type Tab = "dashboard" | "focus" | "topics" | "goals" | "analytics"
 
 export function DemoPreview() {
   const [activeTab, setActiveTab] = useState<Tab>("dashboard")
+  const [isMounted, setIsMounted] = useState(false)
+
+  // Avoid hydration mismatch by only rendering after mount
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   const tabs = [
     { id: "dashboard" as Tab, label: "Dashboard", icon: LayoutDashboard },
@@ -53,6 +59,8 @@ export function DemoPreview() {
     { id: "goals" as Tab, label: "Goals", icon: Target },
     { id: "analytics" as Tab, label: "Analytics", icon: BarChart2 },
   ]
+
+  if (!isMounted) return <div className="w-full max-w-5xl mx-auto h-[600px] border border-border rounded-2xl bg-card animate-pulse" />
 
   return (
     <div className="w-full max-w-5xl mx-auto">

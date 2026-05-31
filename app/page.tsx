@@ -207,7 +207,8 @@ export default function HomePage() {
                     {Array.from({ length: 26 }).map((_, wi) => (
                       <div key={wi} className="flex flex-col gap-0.5">
                         {Array.from({ length: 7 }).map((_, di) => {
-                          const rand = Math.random()
+                          // Deterministic pseudo-randomness based on indices
+                          const rand = ((wi * 7 + di) * 9301 + 49297) % 233280 / 233280
                           const opacity = rand > 0.65
                             ? rand > 0.85
                               ? "opacity-90"
