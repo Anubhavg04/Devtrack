@@ -191,7 +191,6 @@ export function FocusTimer({ topics, stats: initialStats }: { topics: Topic[], s
           volume={0.5}
           width="0"
           height="0"
-          config={{ youtube: { playerVars: { origin: typeof window !== 'undefined' ? window.location.origin : '' } } }}
         />
       </div>
 
