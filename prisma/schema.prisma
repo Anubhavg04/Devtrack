@@ -46,6 +46,7 @@ model Topic {
   id          String    @id @default(uuid())
   title       String
   description String?
+  isPrivate   Boolean   @default(false)
   status      String    @default("active")
   createdAt   DateTime  @default(now())
   userId      String

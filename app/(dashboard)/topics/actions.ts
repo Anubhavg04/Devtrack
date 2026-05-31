@@ -29,6 +29,7 @@ export async function addTopic(formData: FormData) {
 
   const title = formData.get("title") as string
   const description = formData.get("description") as string
+  const isPrivate = formData.get("isPrivate") === "on"
 
   if (!title?.trim()) return
 
@@ -36,6 +37,7 @@ export async function addTopic(formData: FormData) {
     data: {
       title: title.trim(),
       description: description?.trim() || null,
+      isPrivate,
       userId: user.id,
     },
   })

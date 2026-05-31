@@ -5,7 +5,7 @@ import { unstable_cache } from "next/cache"
 import { getUserId } from "@/lib/getUser"
 import { addTopic, deleteTopic, logSession } from "./actions"
 import { SubmitButton } from "@/components/submitbutton"
-import { Flame } from "lucide-react"
+import { Flame, Lock } from "lucide-react"
 
 
 const getTopicsWithStats = (userId: string) =>
@@ -18,6 +18,7 @@ const getTopicsWithStats = (userId: string) =>
           id: true,
           title: true,
           description: true,
+          isPrivate: true,
           createdAt: true,
           _count: {
             select: { sessions: true }, // count done in DB, not in JS
@@ -62,6 +63,14 @@ export default async function TopicsPage() {
             placeholder="Description (optional)"
             className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
+          <label className="flex items-center gap-2 text-sm text-muted-foreground select-none cursor-pointer">
+            <input
+              type="checkbox"
+              name="isPrivate"
+              className="rounded border-border bg-background"
+            />
+            Make this topic private (hide from Live Feed)
+          </label>
           <SubmitButton
             label="Add topic"
             loadingLabel="Adding..."
@@ -109,7 +118,12 @@ export default async function TopicsPage() {
                 {/* Topic header */}
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="font-semibold text-lg">{topic.title}</h3>
+                    <h3 className="font-semibold text-lg flex items-center">
+                      {topic.title}
+                      {topic.isPrivate && (
+                        <Lock className="w-4 h-4 ml-2 text-muted-foreground" aria-label="Private topic" />
+                      )}
+                    </h3>
                     {topic.description && (
                       <p className="text-muted-foreground text-sm mt-1">
                         {topic.description}

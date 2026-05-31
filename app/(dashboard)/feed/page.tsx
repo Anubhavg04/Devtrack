@@ -12,6 +12,11 @@ export default async function FeedPage() {
 
   const sessions = await prisma.session.findMany({
     take: 50,
+    where: {
+      topic: {
+        isPrivate: false,
+      },
+    },
     orderBy: { date: "desc" },
     include: {
       user: {
