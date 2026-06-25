@@ -2,9 +2,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { v4 as uuidv4 } from "uuid"
-import { Resend } from "resend"
-
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+import nodemailer from "nodemailer"
 
 export async function requestPasswordReset(formData: FormData) {
   const email = formData.get("email") as string
@@ -40,11 +38,22 @@ export async function requestPasswordReset(formData: FormData) {
 
   const resetLink = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/reset-password?token=${token}`
 
-  // If we have a Resend API key, send the email
-  if (resend) {
+  // If we have Gmail credentials, send the email
+  const userEmail = process.env.GMAIL_USER
+  const appPassword = process.env.GMAIL_APP_PASSWORD
+
+  if (userEmail && appPassword) {
     try {
-      await resend.emails.send({
-        from: "DevTrack Security <security@yourdomain.com>", // You will need a verified domain in Resend
+      const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: userEmail,
+          pass: appPassword,
+        },
+      })
+
+      await transporter.sendMail({
+        from: `"DevTrack Security" <${userEmail}>`,
         to: email,
         subject: "Reset your DevTrack password",
         html: `
@@ -61,10 +70,13 @@ export async function requestPasswordReset(formData: FormData) {
           </div>
         `
       })
+      console.log("Password reset email sent successfully via Gmail!")
     } catch (error) {
-      console.error("Failed to send email with Resend:", error)
+      console.error("Failed to send email with Nodemailer:", error)
       // Even if email fails, we return success so we don't leak user existence
     }
+  } else {
+    console.warn("Skipping email send: GMAIL_USER or GMAIL_APP_PASSWORD not set in .env.local")
   }
 
   // Always log it for local development testing
