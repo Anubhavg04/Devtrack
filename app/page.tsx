@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { DemoPreview } from "@/components/demo-preview"
+import { DevTrackLogo } from "@/components/ui/devtrack-logo"
 import {
   BookOpen,
   GitCommit,
@@ -36,7 +37,7 @@ export default function HomePage() {
           <div className="flex items-center gap-2">
             <BookOpen size={16} className="text-muted-foreground" />
             <span className="text-xl font-medium tracking-tight">
-              Dev<span className="text-muted-foreground">track</span>
+              <DevTrackLogo />
             </span>
           </div>
           <div className="flex items-center gap-4">
@@ -74,7 +75,7 @@ export default function HomePage() {
                 <span className="text-muted-foreground font-light">counts.</span>
           </h1>
             <p className="text-base text-muted-foreground leading-relaxed max-w-md">
-              DevTrack is a learning journal for developers.
+              <DevTrackLogo className="text-lg inline" /> is a learning journal for developers.
               Log sessions, track topics, build streaks.
               See a year of growth in one view.
             </p>
@@ -342,7 +343,7 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between text-xs text-muted-foreground font-mono">
           <div className="flex items-center gap-2">
             <BookOpen size={12} />
-            <span>Devtrack</span>
+            <DevTrackLogo />
           </div>
           <span>Built with ❤️ by @Anubhav · {new Date().getFullYear()}</span>
         </div>

@@ -5,6 +5,7 @@ import { subDays, format, differenceInDays } from "date-fns"
 import { ShareButton } from "@/components/share-button"
 import { getCurrentUser } from "@/lib/getUser"
 import { ArrowLeft } from "lucide-react"
+import { DevTrackLogo } from "@/components/ui/devtrack-logo"
 
 type PublicProfile = {
   name: string | null
@@ -147,7 +148,7 @@ export default async function PublicProfilePage({
           <div className="w-3 h-3 rounded-full bg-red-500" />
           <div className="w-3 h-3 rounded-full bg-yellow-500" />
           <div className="w-3 h-3 rounded-full bg-green-500" />
-          <span className="ml-3 text-xs text-green-600">devtrack ~ profile</span>
+          <span className="ml-3 text-xs text-green-600 flex items-center gap-1"><DevTrackLogo text="devtrack" className="text-xs font-bold" /> ~ profile</span>
         </div>
 
         {/* whoami */}
@@ -163,7 +164,7 @@ export default async function PublicProfilePage({
             />
             <div>
               <h1 className="text-2xl font-bold text-green-300">{user.displayName ?? user.name}</h1>
-              <p className="text-green-600 text-sm">@{user.username} · Devtrack user for {memberDays} days</p>
+              <div className="text-green-600 text-sm flex items-center gap-1 flex-wrap">@{user.username} · <DevTrackLogo /> user for {memberDays} days</div>
               {user.bio ? (
                 <p className="text-green-500/90 text-sm mt-2 max-w-xl">{user.bio}</p>
               ) : null}
@@ -260,9 +261,9 @@ export default async function PublicProfilePage({
         <ShareButton username={user.username!}/>
         {/* Footer */}
         <div className="border-t border-green-900 pt-4 flex items-center justify-between">
-          <p className="text-xs text-green-700">
-            powered by <span className="text-green-500">devtrack</span>
-          </p>
+          <div className="text-xs text-green-700 flex items-center gap-1">
+            powered by <DevTrackLogo text="devtrack" className="lowercase" />
+          </div>
           <a
             href="/"
             className="text-xs text-green-600 hover:text-green-400 transition-colors"

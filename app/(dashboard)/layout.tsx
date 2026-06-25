@@ -7,6 +7,7 @@ import { ActiveLink } from "@/components/active-link"
 import { MobileNav } from "@/components/mobile-nav"
 import { getCurrentUser } from "@/lib/getUser"
 import { UserAvatar } from "@/components/user-avatar"
+import { DevTrackLogo } from "@/components/ui/devtrack-logo"
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
@@ -35,11 +36,9 @@ export default async function DashboardLayout({
       <aside className="hidden md:flex fixed top-0 left-0 h-full w-60 border-r border-border flex-col bg-sidebar z-40">
 
         <div className="px-5 py-5 border-b border-border flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <BookOpen size={15} className="text-muted-foreground" />
-            <span className="font-mono font-semibold text-sm tracking-tight">
-              dev<span className="text-muted-foreground">track</span>
-            </span>
+          <div className="flex items-center gap-2.5">
+            <BookOpen size={18} className="text-muted-foreground" />
+            <DevTrackLogo className="text-lg leading-none" />
           </div>
           <ThemeToggle />
         </div>
