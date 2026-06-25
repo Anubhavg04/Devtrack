@@ -19,6 +19,7 @@ model User {
   avatar        String?
   displayName   String?
   bio           String?
+  password      String?
   emailVerified DateTime?
   accounts      Account[]
   GithubAccount GithubAccount?

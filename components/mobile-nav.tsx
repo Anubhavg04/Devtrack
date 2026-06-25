@@ -6,6 +6,7 @@ import { UserAvatar } from "./user-avatar"
 import { ThemeToggle } from "./theme-toggle"
 import { ActiveLink, MobileNavLink } from "./active-link"
 import { signOut } from "next-auth/react"
+import { DevTrackLogo } from "./ui/devtrack-logo"
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
@@ -41,11 +42,9 @@ export function MobileNav({ user }: MobileNavProps) {
     <>
       {/* Mobile top bar */}
       <header className="md:hidden fixed top-0 left-0 right-0 z-50 border-b border-border bg-sidebar flex items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-2">
-          <BookOpen size={15} className="text-muted-foreground" />
-          <span className="font-mono font-semibold text-sm tracking-tight">
-            dev<span className="text-muted-foreground">track</span>
-          </span>
+        <div className="flex items-center gap-2.5">
+          <BookOpen size={18} className="text-muted-foreground" />
+          <DevTrackLogo className="text-lg leading-none" />
         </div>
         <div className="flex items-center gap-3">
           <UserAvatar 
