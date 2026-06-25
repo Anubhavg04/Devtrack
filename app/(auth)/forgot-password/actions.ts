@@ -16,7 +16,7 @@ export async function requestPasswordReset(formData: FormData) {
   })
 
   // We don't want to leak whether a user exists or not for security reasons.
-  if (!user || !user.password) {
+  if (!user) {
     return { success: true }
   }
 

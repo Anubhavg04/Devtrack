@@ -34,8 +34,7 @@ export default function ForgotPasswordPage() {
         <div className="flex flex-col gap-2">
           <h2 className="text-2xl font-bold tracking-tight">Check your email</h2>
           <p className="text-sm text-muted-foreground">
-            If an account exists for that email, we have sent a secure password reset link. 
-            (For local development, check your terminal console!)
+            If an account exists for that email, we have sent a secure password reset link.
           </p>
         </div>
         <a href="/login" className="w-full mt-4 px-4 py-3 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20">
